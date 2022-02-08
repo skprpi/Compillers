@@ -1,5 +1,5 @@
 import pytest
-from task1.parser import SimpleParser
+from task1.calculator import calculate
 
 parse_test_data = (
     ([1, 2, '+'], [3]),
@@ -17,9 +17,8 @@ parse_test_data = (
 
 
 @pytest.mark.parametrize("stack, expected_result", parse_test_data)
-def test_parse(stack, expected_result):
-    parser = SimpleParser()
-    assert parser.parse(stack) == expected_result
+def test_calculator(stack, expected_result):
+    assert calculate(stack) == expected_result
 
-# cd ./task1
-# pytest ./test_parser.py
+
+# pytest ./task1/tests/test_calculator.py

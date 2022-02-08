@@ -1,98 +1,55 @@
-from task1.decorators import check_len_before, check_last_n_instances_before
+from task1.inner_logic.operations import _is_op
+from task1.inner_logic.string_helpers import split_nums_and_lists, split_str, is_digit
 
-class SimpleParser:
-    # Parser task 1 op
-    @check_last_n_instances_before(int)
-    def _dup_op(self, stack: list):
-        stack.append(stack[-1])
 
-    @check_last_n_instances_before(int)
-    def _drop_op(self, stack: list):
+def get_items_before_open_brace(stack):
+    """
+    :example:
+    stack = ['[', '[', 2, 13, 4 -> [2, 13, 4]
+    """
+    st = []
+    while len(stack) > 0 and stack[-1] != '[':
+        st.append(stack[-1])
         stack.pop()
+    if stack[-1] != '[':
+        print('Missing "[" bracket ')  # Exception
+    stack.pop()  # delete [
+    st.reverse()
+    return st
 
-    @check_last_n_instances_before(int, int)
-    def _swap_op(self, stack: list):
-        stack[-1], stack[-2] = stack[-2], stack[-1]
 
-    @check_last_n_instances_before(list)
-    def _head_list_op(self, stack: list):
-        head = self._head(stack[-1])
-        stack.pop()
-        stack.append(head)
+def append_element_by_deep(stack, ans, el, list_member_deep):
+    if el == '[':
+        list_member_deep += 1
+        stack.append(el)
+    elif _is_op(el):
+        if list_member_deep == 0:
+            ans.append(el)
+        else:
+            stack.append(el)
+    else:
+        if not is_digit(el):
+            print('Wrong operation!')  # Exception
+        if list_member_deep == 0:
+            ans.append(int(el))
+        else:
+            stack.append(int(el))
+    return list_member_deep
 
-    @check_last_n_instances_before(list)
-    def _tail_list_op(self, stack: list):
-        tail = self._tail(stack[-1])
-        stack.pop()
-        stack.append(tail)
 
-    # Parser unary logic op
-    @check_last_n_instances_before(list)
-    def _empty_list_op(self, stack: list):
-        result = len(stack[-1]) == 0
-        stack.pop()
-        stack.append(result)
-
-    # Parser + / * -
-    @check_last_n_instances_before(int, int)
-    def _plus_op(self, stack):
-        result = stack[-2] + stack[-1]
-        stack.pop()
-        stack[-1] = result
-
-    @check_last_n_instances_before(int, int)
-    def _minus_op(self, stack):
-        result = stack[-2] - stack[-1]
-        stack.pop()
-        stack[-1] = result
-
-    @check_last_n_instances_before(int, int)
-    def _mul_op(self, stack):
-        result = stack[-2] * stack[-1]
-        stack.pop()
-        stack[-1] = result
-
-    @check_last_n_instances_before(int, int)
-    def _div_op(self, stack):
-        result = stack[-2] // stack[-1]
-        stack.pop()
-        stack[-1] = result
-
-    # Parser helper op
-    @check_len_before(1)
-    def _head(self, p):
-        return p[0]
-
-    @check_len_before(1)
-    def _tail(self, p):
-        return p[1:]
-
-    def _is_op(self, op: str):
-        return op in self._op
-
-    # Constructor
-    def __init__(self):
-        self._op = {
-            '+': lambda stack: self._plus_op(stack),
-            '-': lambda stack: self._minus_op(stack),
-            '*': lambda stack: self._mul_op(stack),
-            '/': lambda stack: self._div_op(stack),
-            'dup': lambda stack: self._dup_op(stack),
-            'drop': lambda stack: self._drop_op(stack),
-            'swap': lambda stack: self._swap_op(stack),
-            'first': lambda stack: self._head_list_op(stack),
-            'rest': lambda stack: self._tail_list_op(stack),
-            'null': lambda stack: self._empty_list_op(stack),
-        }
-
-    # Main functional
-    def parse(self, source_stack: list):
-        stack = []
-        for el in source_stack:
-            if self._is_op(el):
-                self._op[el](stack)
+def parce(expr: str):
+    res = split_nums_and_lists(split_str(expr))
+    stack = []
+    ans = []
+    list_member_deep = 0
+    for el in res:
+        if el == ']':
+            items = get_items_before_open_brace(stack)
+            list_member_deep -= 1
+            if list_member_deep == 0:
+                ans.append(items)
             else:
-                stack.append(el)
-        if len(stack) > 1:
-            print('Your function has the side effect!')  # Warning
-        return stack
+                stack.append(items)
+            continue
+        list_member_deep = append_element_by_deep(stack, ans, el, list_member_deep)
+    return ans

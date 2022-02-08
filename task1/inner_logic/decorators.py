@@ -8,9 +8,9 @@ def check_len_before(min_len):
     Check length of stack before make an operation
     """
     def func_wrap(func):
-        def inner_wrap(self, stack):
+        def inner_wrap(stack):
             check_stack_len(stack, min_len)
-            return func(self, stack)
+            return func(stack)
         return inner_wrap
     return func_wrap
 
@@ -31,8 +31,8 @@ def check_last_n_instances_before(*args):
     stack = [1, 2, 2.3, "123"], instances = (str, float, str) -> Exception!
     """
     def func_wrap(func):
-        def inner_wrap(self, stack):
+        def inner_wrap(stack):
             check_instances(stack, args)
-            return func(self, stack)
+            return func(stack)
         return inner_wrap
     return func_wrap
