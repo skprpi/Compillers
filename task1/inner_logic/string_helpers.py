@@ -44,3 +44,18 @@ def is_digit(num: str):
         if not is_number(el):
             return False
     return True
+
+
+def stringify_recursive(lst: list):
+    res = ''
+    for i in range(len(lst)):
+        el = lst[i]
+        sp = '' if i == len(lst) - 1 else ' '
+        if isinstance(el, list):
+            res += '[' + stringify_recursive(el) + ']' + sp
+        elif isinstance(el, int) or isinstance(el, bool) or isinstance(el, str):
+            res += str(el) + sp
+        else:
+            pass
+            # Exception not supported type conversation
+    return res

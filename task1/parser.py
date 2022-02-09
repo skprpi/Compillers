@@ -37,7 +37,7 @@ def append_element_by_deep(stack, ans, el, list_member_deep):
     return list_member_deep
 
 
-def parce(expr: str):
+def parse(expr: str):
     res = split_nums_and_lists(split_str(expr))
     stack = []
     ans = []
