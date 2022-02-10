@@ -1,4 +1,4 @@
-from task1.inner_logic.operations import _op, _is_op, _is_expr_op, _expr_op
+from task1.inner_logic.operations import _op, _is_op, _is_expr_op, _expr_op, stack_append, _is_symbol, run_func
 
 
 def calculate(expr: list, mode='debug'):
@@ -11,8 +11,10 @@ def calculate(expr: list, mode='debug'):
             _op[el](stack)
         elif _is_expr_op(el):
             _expr_op[el](expr, stack)
+        elif _is_symbol(el):
+            run_func(expr, el)
         else:
-            stack.append(el)
+            stack_append(stack, el)
     if mode == 'debug':
         print(f'expr = {expr}\nstack = {stack}\n')
     if len(stack) > 1:

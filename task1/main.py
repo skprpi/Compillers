@@ -4,4 +4,4 @@ from task1.display import display
 
 
 # print(calculate(parse('3 true [2 *] [1 *] if')))
-print(calculate([3, 1, [2, '*'], 'dip', '+']))
+print(calculate([':square', ['dup', '*'], 'def', 3, 'square']))
