@@ -12,7 +12,7 @@ def get_items_before_open_brace(stack):
         st.append(stack[-1])
         stack.pop()
     if stack[-1] != '[':
-        print('Missing "[" bracket ')  # Exception
+        raise ValueError('Missing "[" bracket ')
     stack.pop()  # delete [
     st.reverse()
     return st
@@ -29,7 +29,7 @@ def append_element_by_deep(stack, ans, el, list_member_deep):
             stack.append(el)
     else:
         if not is_digit(el):
-            print('Wrong operation!')  # Exception
+            raise ValueError('Bad parse')
         if list_member_deep == 0:
             ans.append(int(el))
         else:

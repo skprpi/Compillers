@@ -1,7 +1,6 @@
 def split_str(s: str, delimiter: str = ' '):
     if len(delimiter) != 1:
-        print('Delimeter has to be the one symbhol')
-        return []
+        raise ValueError(f'Delimiter have to be the length 1')
     result = []
     is_split = True
     for i in range(len(s)):
@@ -51,11 +50,10 @@ def stringify_recursive(lst: list):
     for i in range(len(lst)):
         el = lst[i]
         sp = '' if i == len(lst) - 1 else ' '
-        if isinstance(el, list):
+        if isinstance(el, list) or isinstance(el, tuple):
             res += '[' + stringify_recursive(el) + ']' + sp
         elif isinstance(el, int) or isinstance(el, bool) or isinstance(el, str):
             res += str(el) + sp
         else:
-            pass
-            # Exception not supported type conversation
+            raise TypeError(f'Undefined type')
     return res

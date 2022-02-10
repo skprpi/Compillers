@@ -1,4 +1,5 @@
-from task1.inner_logic.decorators import check_last_n_instances_before, check_len_before
+from task1.inner_logic.decorators import check_last_n_instances_before, check_len_before,\
+    check_last_n_expr_instances_before
 
 
 @check_last_n_instances_before(int)
@@ -33,7 +34,7 @@ def _tail_list_op(stack: list):
 # Parser unary logic op
 @check_last_n_instances_before(list)
 def _empty_list_op(stack: list):
-    result = len(stack[-1]) == 0
+    result = 'true' if len(stack[-1]) == 0 else 'false'
     stack.pop()
     stack.append(result)
 
@@ -67,6 +68,25 @@ def _div_op(stack):
     stack[-1] = result
 
 
+# Parse expr and stack op
+@check_last_n_expr_instances_before(str, list, list)
+def _if_op(expr, stack):
+    is_ok, if_expr, else_expr = stack[-3], stack[-2], stack[-1]
+    stack.pop(); stack.pop(); stack.pop()
+    if is_ok == 'true':
+        _preppend_list(expr, if_expr)
+    else:
+        _preppend_list(expr, else_expr)
+
+
+@check_last_n_expr_instances_before((int, list, str, tuple), list)
+def _dip_op(expr, stack):
+    first, second = stack[-2], stack[-1]
+    stack.pop(); stack.pop()
+    second.append(first)
+    _preppend_list(expr, second)
+
+
 # Parser helper op
 @check_len_before(1)
 def _head(p):
@@ -79,7 +99,20 @@ def _tail(p):
 
 
 def _is_op(op: str):
+    if not isinstance(op, str):
+        return False
     return op in _op
+
+
+def _is_expr_op(op: str):
+    if not isinstance(op, str):
+        return False
+    return op in _expr_op
+
+
+def _preppend_list(change, new_begin):
+    for el in reversed(new_begin):
+        change.insert(0, el)
 
 
 _op = {
@@ -93,4 +126,9 @@ _op = {
     'first': lambda stack: _head_list_op(stack),
     'rest': lambda stack: _tail_list_op(stack),
     'null': lambda stack: _empty_list_op(stack),
+}
+
+_expr_op = {
+    'if': lambda expr, stack: _if_op(expr, stack),
+    'dip': lambda expr, stack: _dip_op(expr, stack),
 }
