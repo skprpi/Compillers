@@ -2,12 +2,12 @@ from task1.inner_logic.decorators import check_last_n_instances_before, check_le
     check_last_n_expr_instances_before
 
 
-@check_last_n_instances_before(int)
+@check_last_n_instances_before((int, tuple, list, str))
 def _dup_op(stack: list):
     stack.append(stack[-1])
 
 
-@check_last_n_instances_before(int)
+@check_last_n_instances_before((int, tuple, list, str))
 def _drop_op(stack: list):
     stack.pop()
 
@@ -37,6 +37,56 @@ def _empty_list_op(stack: list):
     result = 'true' if len(stack[-1]) == 0 else 'false'
     stack.pop()
     stack.append(result)
+
+
+# Parser sum mul butlast sorted member
+@check_last_n_instances_before((list, tuple))
+def _sum_list_op(stack):
+    res = 0
+    for el in stack[-1]:
+        res += el
+    stack.pop()
+    stack.append(res)
+
+
+@check_last_n_instances_before((list, tuple))
+def _mul_list_op(stack):
+    res = 1
+    is_empty = len(stack[-1]) == 0
+    for el in stack[-1]:
+        res *= el
+    stack.pop()
+    stack.append(0 if is_empty else res)
+
+
+@check_last_n_instances_before((list, tuple))
+def _butlast_list_op(stack):
+    if len(stack[-1]) == 0:
+        raise ValueError('List have to be minimal length 1')
+    stack[-1].pop()
+
+
+@check_last_n_instances_before((list, tuple))
+def _sorted_list_op(stack):
+    res = 'true'
+    for i in range(1, len(stack[-1])):
+        if stack[-1][i - 1] >= stack[-1][i]:
+            res = 'false'
+            break
+    stack.pop()
+    stack.append(res)
+
+
+@check_last_n_instances_before(int, (list, tuple))
+def _member_list_op(stack):
+    res = 'false'
+    elem, lst = stack[-2], stack[-1]
+    stack.pop(); stack.pop()
+    for el in lst:
+        if el == elem:
+            res = 'true'
+            break
+    stack.append(res)
 
 
 # Parser + / * -
@@ -157,6 +207,11 @@ _op = {
     'rest': lambda stack: _tail_list_op(stack),
     'null': lambda stack: _empty_list_op(stack),
     'def': lambda stack: _def_op(stack),
+    'sum': lambda stack: _sum_list_op(stack),
+    'mul': lambda stack: _mul_list_op(stack),
+    'butlast': lambda stack: _butlast_list_op(stack),
+    'sorted': lambda stack: _sorted_list_op(stack),
+    'member': lambda stack: _member_list_op(stack),
 }
 
 _expr_op = {

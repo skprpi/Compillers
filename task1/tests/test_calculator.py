@@ -1,5 +1,6 @@
 import pytest
 from task1.calculator import calculate
+from task1.parser import parse
 
 parse_test_data = (
     ([1, 2, '+'], [3]),
@@ -19,12 +20,31 @@ parse_test_data = (
     ([3, 'true', [2, '*'], [1, '*'], 'if', 2, '+'], [8]),
     ([3, 1, [2, '*'], 'dip', '+'], [7]),
     ([':square', ['dup', '*'], 'def', 3, 'square'], [9]),
+    ([':len', ['dup', 'null', ['drop', 0], ['rest', 'len', 1, '+'], 'if'], 'def', ['a', 'b', 'c'], 'len'], [3]),
 )
 
 
 @pytest.mark.parametrize("stack, expected_result", parse_test_data)
 def test_calculator(stack, expected_result):
     assert calculate(stack, 'test') == expected_result
+
+
+parse_and_calculate_data = (
+    (':len [dup null [drop 0] [rest len 1 +] if] def [1 2 3] len', [3]),
+    ('[1 2 3] sum', [6]),
+    ('[2 2 3] mul', [12]),
+    ('[1 2 3 4] butlast', [[1, 2, 3]]),
+    ('[1 2 7 9] sorted', ['true']),
+    ('[1 2 2 9] sorted', ['false']),
+    ('3 [1 8 3] member', ['true']),
+    ('2 [1 8 3] member', ['false']),
+)
+
+
+@pytest.mark.parametrize("expr, expected_result", parse_and_calculate_data)
+def test_parse_and_calculator(expr, expected_result):
+    parsed_expr = parse(expr)
+    assert calculate(parsed_expr, 'test') == expected_result
 
 
 # pytest ./task1/tests/test_calculator.py

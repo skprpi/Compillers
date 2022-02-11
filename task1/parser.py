@@ -28,12 +28,13 @@ def append_element_by_deep(stack, ans, el, list_member_deep):
         else:
             stack.append(el)
     else:
-        if not is_digit(el):
-            raise ValueError('Bad parse')
+        new_el = el
+        if is_digit(el):
+            new_el = int(new_el)
         if list_member_deep == 0:
-            ans.append(int(el))
+            ans.append(new_el)
         else:
-            stack.append(int(el))
+            stack.append(new_el)
     return list_member_deep
 
 

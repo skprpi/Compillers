@@ -4,4 +4,5 @@ from task1.display import display
 
 
 # print(calculate(parse('3 true [2 *] [1 *] if')))
-print(calculate([':square', ['dup', '*'], 'def', 3, 'square']))
+k = calculate(parse('[2 2 3] mul'))
+print(k)
