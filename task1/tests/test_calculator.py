@@ -31,13 +31,6 @@ def test_calculator(stack, expected_result):
 
 parse_and_calculate_data = (
     (':len [dup null [drop 0] [rest len 1 +] if] def [1 2 3] len', [3]),
-    ('[1 2 3] sum', [6]),
-    ('[2 2 3] mul', [12]),
-    ('[1 2 3 4] butlast', [[1, 2, 3]]),
-    ('[1 2 7 9] sorted', ['true']),
-    ('[1 2 2 9] sorted', ['false']),
-    ('3 [1 8 3] member', ['true']),
-    ('2 [1 8 3] member', ['false']),
 )
 
 

@@ -12,7 +12,7 @@ def _drop_op(stack: list):
     stack.pop()
 
 
-@check_last_n_instances_before(int, int)
+@check_last_n_instances_before((int, str, list, tuple), (int, str, list, tuple))
 def _swap_op(stack: list):
     stack[-1], stack[-2] = stack[-2], stack[-1]
 
@@ -37,56 +37,6 @@ def _empty_list_op(stack: list):
     result = 'true' if len(stack[-1]) == 0 else 'false'
     stack.pop()
     stack.append(result)
-
-
-# Parser sum mul butlast sorted member
-@check_last_n_instances_before((list, tuple))
-def _sum_list_op(stack):
-    res = 0
-    for el in stack[-1]:
-        res += el
-    stack.pop()
-    stack.append(res)
-
-
-@check_last_n_instances_before((list, tuple))
-def _mul_list_op(stack):
-    res = 1
-    is_empty = len(stack[-1]) == 0
-    for el in stack[-1]:
-        res *= el
-    stack.pop()
-    stack.append(0 if is_empty else res)
-
-
-@check_last_n_instances_before((list, tuple))
-def _butlast_list_op(stack):
-    if len(stack[-1]) == 0:
-        raise ValueError('List have to be minimal length 1')
-    stack[-1].pop()
-
-
-@check_last_n_instances_before((list, tuple))
-def _sorted_list_op(stack):
-    res = 'true'
-    for i in range(1, len(stack[-1])):
-        if stack[-1][i - 1] >= stack[-1][i]:
-            res = 'false'
-            break
-    stack.pop()
-    stack.append(res)
-
-
-@check_last_n_instances_before(int, (list, tuple))
-def _member_list_op(stack):
-    res = 'false'
-    elem, lst = stack[-2], stack[-1]
-    stack.pop(); stack.pop()
-    for el in lst:
-        if el == elem:
-            res = 'true'
-            break
-    stack.append(res)
 
 
 # Parser + / * -
@@ -118,6 +68,14 @@ def _div_op(stack):
     stack[-1] = result
 
 
+@check_last_n_instances_before(int, (list, tuple))
+def _cons_op(stack):
+    first, second = stack[-2], stack[-1]
+    stack.pop(); stack.pop()
+    second.insert(0, first)
+    stack.append(second)
+
+
 # Parse expr and stack op
 @check_last_n_expr_instances_before(str, (list, tuple), (list, tuple))
 def _if_op(expr, stack):
@@ -133,7 +91,7 @@ def _if_op(expr, stack):
 def _dip_op(expr, stack):
     first, second = stack[-2], stack[-1]
     stack.pop(); stack.pop()
-    second.append(first)
+    expr.insert(0, first)
     _preppend_list(expr, second)
 
 
@@ -149,6 +107,40 @@ def run_func(expr, sym):
         raise KeyError(f'Can not find symbol {sym}')
     _preppend_list(expr, _symbols[sym])
 
+
+@check_last_n_instances_before(int, int)
+def _gr_op(stack):
+    first, second = stack[-2], stack[-1]
+    stack.pop(); stack.pop()
+    stack.append('true' if first > second else 'false')
+
+
+@check_last_n_instances_before(int, int)
+def _lo_op(stack):
+    first, second = stack[-2], stack[-1]
+    stack.pop(); stack.pop()
+    stack.append('true' if first < second else 'false')
+
+
+@check_last_n_instances_before(int, int)
+def _eq_op(stack):
+    first, second = stack[-2], stack[-1]
+    stack.pop(); stack.pop()
+    stack.append('true' if first == second else 'false')
+
+
+@check_last_n_instances_before(str, str)
+def _and_op(stack):
+    first, second = _joy_bool_to_py(stack[-2]), _joy_bool_to_py(stack[-1])
+    stack.pop(); stack.pop()
+    stack.append(_py_bool_to_joy(first and second))
+
+
+@check_last_n_instances_before(str, str)
+def _or_op(stack):
+    first, second = _joy_bool_to_py(stack[-2]), _joy_bool_to_py(stack[-1])
+    stack.pop(); stack.pop()
+    stack.append(_py_bool_to_joy(first or second))
 
 # Parser helper op
 @check_len_before(1)
@@ -184,6 +176,25 @@ def _preppend_list(change, new_begin):
         change.insert(0, el)
 
 
+def _append_list(change, new_end):
+    for el in new_end:
+        change.append(el)
+
+
+def _is_joy_bool(st: str):
+    return st == 'true' or st == 'false'
+
+
+def _joy_bool_to_py(st: str):
+    if not _is_joy_bool(st):
+        raise ValueError('Expected true of false value')
+    return st == 'true'
+
+
+def _py_bool_to_joy(st: bool):
+    return 'true' if st else 'false'
+
+
 def stack_append(stack, el):
     if isinstance(el, str):
         if len(el) <= 1:
@@ -207,11 +218,12 @@ _op = {
     'rest': lambda stack: _tail_list_op(stack),
     'null': lambda stack: _empty_list_op(stack),
     'def': lambda stack: _def_op(stack),
-    'sum': lambda stack: _sum_list_op(stack),
-    'mul': lambda stack: _mul_list_op(stack),
-    'butlast': lambda stack: _butlast_list_op(stack),
-    'sorted': lambda stack: _sorted_list_op(stack),
-    'member': lambda stack: _member_list_op(stack),
+    'cons': lambda stack: _cons_op(stack),
+    '>': lambda stack: _gr_op(stack),
+    '<': lambda stack: _lo_op(stack),
+    '=': lambda stack: _eq_op(stack),
+    'and': lambda stack: _and_op(stack),
+    'or': lambda stack: _or_op(stack),
 }
 
 _expr_op = {
