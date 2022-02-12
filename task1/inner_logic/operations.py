@@ -21,6 +21,8 @@ def _swap_op(stack: list):
 def _head_list_op(stack: list):
     head = _head(stack[-1])
     stack.pop()
+    if isinstance(head, str):
+        head = ':' + head
     stack.append(head)
 
 
@@ -68,10 +70,13 @@ def _div_op(stack):
     stack[-1] = result
 
 
-@check_last_n_instances_before(int, (list, tuple))
+@check_last_n_instances_before((int, str), (list, tuple))
 def _cons_op(stack):
     first, second = stack[-2], stack[-1]
     stack.pop(); stack.pop()
+    if isinstance(first, str):
+        if first[0] == ':':
+            first = first[1:]
     second.insert(0, first)
     stack.append(second)
 
@@ -98,7 +103,9 @@ def _dip_op(expr, stack):
 # Parser function
 @check_last_n_instances_before(str, (list, tuple))
 def _def_op(stack):
-    _symbols[stack[-2]] = stack[-1]
+    if stack[-2][0] != ':':
+        raise TypeError('Expected name of function, operation got')
+    _symbols[stack[-2][1:]] = stack[-1]
     stack.pop(); stack.pop()
 
 
@@ -201,8 +208,8 @@ def stack_append(stack, el):
             raise ValueError('Too slow length')
         elif el[0] != ':' and el != 'true' and el != 'false':
             raise ValueError('Undefined operation')
-        elif el[0] == ':':
-            el = el[1:]
+        # elif el[0] == ':':
+        #     el = el[1:]
     stack.append(el)
 
 
