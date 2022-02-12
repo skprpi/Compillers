@@ -4,7 +4,7 @@ def split_str(s: str, delimiter: str = ' '):
     result = []
     is_split = True
     for i in range(len(s)):
-        if s[i] == delimiter:
+        if s[i] == delimiter or s[i] == '\n':
             is_split = True
             continue
         if is_split:
