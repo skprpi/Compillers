@@ -38,7 +38,8 @@ def split_nums_and_lists(splited_str: list):
 def is_digit(num: str):
     def is_number(a: str):
         return 0 <= ord(a) - ord('0') <= 9
-
+    if num[0] == '-':
+        num = num[1:]
     for el in num:
         if not is_number(el):
             return False

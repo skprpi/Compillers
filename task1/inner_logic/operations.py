@@ -100,6 +100,13 @@ def _dip_op(expr, stack):
     _preppend_list(expr, second)
 
 
+@check_last_n_expr_instances_before((list, tuple))
+def _i_op(expr, stack):
+    new_expr = stack[-1]
+    stack.pop()
+    _preppend_list(expr, new_expr)
+
+
 # Parser function
 @check_last_n_instances_before(str, (list, tuple))
 def _def_op(stack):
@@ -236,6 +243,7 @@ _op = {
 _expr_op = {
     'if': lambda expr, stack: _if_op(expr, stack),
     'dip': lambda expr, stack: _dip_op(expr, stack),
+    'i': lambda expr, stack: _i_op(expr, stack),
 }
 
 _symbols = {}
