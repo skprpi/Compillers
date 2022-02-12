@@ -75,11 +75,31 @@ def
     ]
 def
 
+:append_helper
+    [dup null
+        [drop]
+        [uncons [swap] dip append_helper cons]
+        if
+    ]
+def
 
-[1 2 3] sum
-[2 3 4] mul
-[1 2 3] butlast
-[1 2 3 4 5] sorted
-[1 2 3 3 5] sorted
-3 [2 1 3 4] member
-5 [2 1 3 4] member
+:append
+    [swap append_helper]
+def
+
+
+:reverse_helper
+    [ dup null
+        [drop]
+        [uncons [swap cons] dip reverse_helper]
+        if
+    ]
+def
+
+
+:reverse
+    [[] swap reverse_helper]
+def
+
+[a b c] [d e] append
+[a b c d e] reverse
