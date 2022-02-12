@@ -102,39 +102,27 @@ def
 def
 
 
-:map_helper
-    [swap dup null
-        [[swap] dip drop drop]
-        [uncons [[[dup]dip swap]dip swap] dip swap [swap] dip i [swap] dip swap cons map_helper]
-        if
-    ]
-def
-
 
 :map
-    [[] map_helper reverse]
-def
-
-
-:filter_helper
-    [ [[ dup ] dip swap ] dip swap dup null
-        [drop swap drop swap drop]
-        [ first [[dup] dip  swap] dip swap [dup] dip i
-            [swap cons ]
-            [drop ]
-            if
-            [[ rest ] dip] dip
-            filter_helper
-        ]
+    [swap dup null
+        [swap drop]
+        [uncons [[dup]dip swap i swap] dip swap map cons]
         if
     ]
 def
 
 
 :filter
-    [[] filter_helper reverse]
+    [swap dup null
+        [swap drop]
+        [uncons [[dup]dip dup [swap i]dip swap] dip swap
+            [[swap] dip swap filter cons]
+            [[drop] dip swap filter]
+            if
+        ]
+        if
+    ]
 def
 
 
-[1 2 3] [2 *] map
 [-5 7 1 8 -4] [0 >] filter
