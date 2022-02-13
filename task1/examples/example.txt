@@ -125,4 +125,23 @@ def
 def
 
 
-[-5 7 1 8 -4] [0 >] filter
+:qsort
+    [ dup null
+        []
+        [ dup rest null
+            []
+            [dup [uncons [dup [<] cons]dip swap filter [[] cons ] dip qsort swap append]dip uncons [[>] cons] dip swap filter qsort append]
+            if
+        ]
+        if
+    ]
+def
+
+[1 2 3] qsort
+[1 3 2] qsort
+[2 1 3] qsort
+[2 3 1] qsort
+[3 1 2] qsort
+[3 2 1] qsort
+
+[-5 7 1 8 -4] qsort

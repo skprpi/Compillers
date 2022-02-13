@@ -1,10 +1,10 @@
 from task1.inner_logic.decorators import check_last_n_instances_before, check_len_before,\
     check_last_n_expr_instances_before
-
+from copy import deepcopy
 
 @check_last_n_instances_before((int, tuple, list, str))
 def _dup_op(stack: list):
-    stack.append(stack[-1])
+    stack.append(deepcopy(stack[-1]))
 
 
 @check_last_n_instances_before((int, tuple, list, str))
@@ -14,12 +14,12 @@ def _drop_op(stack: list):
 
 @check_last_n_instances_before((int, str, list, tuple), (int, str, list, tuple))
 def _swap_op(stack: list):
-    stack[-1], stack[-2] = stack[-2], stack[-1]
+    stack[-1], stack[-2] = deepcopy(stack[-2]), deepcopy(stack[-1])
 
 
 @check_last_n_instances_before((list, tuple))
 def _head_list_op(stack: list):
-    head = _head(stack[-1])
+    head = deepcopy(_head(stack[-1]))
     stack.pop()
     if isinstance(head, str):
         head = ':' + head
@@ -28,7 +28,7 @@ def _head_list_op(stack: list):
 
 @check_last_n_instances_before((list, tuple))
 def _tail_list_op(stack: list):
-    tail = _tail(stack[-1])
+    tail = deepcopy(_tail(stack[-1]))
     stack.pop()
     stack.append(tail)
 
@@ -72,7 +72,7 @@ def _div_op(stack):
 
 @check_last_n_instances_before((int, str), (list, tuple))
 def _cons_op(stack):
-    first, second = stack[-2], stack[-1]
+    first, second = deepcopy(stack[-2]), deepcopy(stack[-1])
     stack.pop(); stack.pop()
     if isinstance(first, str):
         if first[0] == ':':
@@ -84,7 +84,7 @@ def _cons_op(stack):
 # Parse expr and stack op
 @check_last_n_expr_instances_before(str, (list, tuple), (list, tuple))
 def _if_op(expr, stack):
-    is_ok, if_expr, else_expr = stack[-3], stack[-2], stack[-1]
+    is_ok, if_expr, else_expr = deepcopy(stack[-3]), deepcopy(stack[-2]), deepcopy(stack[-1])
     stack.pop(); stack.pop(); stack.pop()
     if is_ok == 'true':
         _preppend_list(expr, if_expr)
@@ -94,7 +94,7 @@ def _if_op(expr, stack):
 
 @check_last_n_expr_instances_before((int, list, str, tuple), list)
 def _dip_op(expr, stack):
-    first, second = stack[-2], stack[-1]
+    first, second = deepcopy(stack[-2]), deepcopy(stack[-1])
     stack.pop(); stack.pop()
     expr.insert(0, first)
     _preppend_list(expr, second)
@@ -102,7 +102,7 @@ def _dip_op(expr, stack):
 
 @check_last_n_expr_instances_before((list, tuple))
 def _i_op(expr, stack):
-    new_expr = stack[-1]
+    new_expr = deepcopy(stack[-1])
     stack.pop()
     _preppend_list(expr, new_expr)
 
@@ -112,7 +112,7 @@ def _i_op(expr, stack):
 def _def_op(stack):
     if stack[-2][0] != ':':
         raise TypeError('Expected name of function, operation got')
-    _symbols[stack[-2][1:]] = stack[-1]
+    _symbols[stack[-2][1:]] = deepcopy(stack[-1])
     stack.pop(); stack.pop()
 
 
@@ -135,6 +135,19 @@ def _lo_op(stack):
     stack.pop(); stack.pop()
     stack.append('true' if first < second else 'false')
 
+
+@check_last_n_instances_before(int, int)
+def _eqlo_op(stack):
+    first, second = stack[-2], stack[-1]
+    stack.pop(); stack.pop()
+    stack.append('true' if first <= second else 'false')
+
+
+@check_last_n_instances_before(int, int)
+def _eqgr_op(stack):
+    first, second = stack[-2], stack[-1]
+    stack.pop(); stack.pop()
+    stack.append('true' if first >= second else 'false')
 
 @check_last_n_instances_before(int, int)
 def _eq_op(stack):
@@ -236,6 +249,8 @@ _op = {
     '>': lambda stack: _gr_op(stack),
     '<': lambda stack: _lo_op(stack),
     '=': lambda stack: _eq_op(stack),
+    '>=': lambda stack: _eqgr_op(stack),
+    '<=': lambda stack: _eqlo_op(stack),
     'and': lambda stack: _and_op(stack),
     'or': lambda stack: _or_op(stack),
 }
