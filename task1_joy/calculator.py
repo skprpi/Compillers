@@ -1,4 +1,4 @@
-from task1.inner_logic.operations import _op, _is_op, _is_expr_op, _expr_op, stack_append, _is_symbol, run_func
+from task1_joy.inner_logic.operations import _op, _is_op, _is_expr_op, _expr_op, stack_append, _is_symbol, run_func
 
 
 def calculate(expr: list, mode='debug'):

@@ -1,0 +1,8 @@
+#lang racket
+; атом - данные (имеет ' в начале)
+; car '(a b c)   -> a
+; cdr '(a b c)   -> (b c)
+; cons 'a '(b c) -> (a b c)
+; eq 'a 'b       -> Nil
+
+(car '(a b c))

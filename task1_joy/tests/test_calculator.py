@@ -1,6 +1,6 @@
 import pytest
-from task1.calculator import calculate
-from task1.parser import parse
+from task1_joy.calculator import calculate
+from task1_joy.parser import parse
 
 parse_test_data = (
     ([1, 2, '+'], [3]),
@@ -40,4 +40,4 @@ def test_parse_and_calculator(expr, expected_result):
     assert calculate(parsed_expr, 'test') == expected_result
 
 
-# pytest ./task1/tests/test_calculator.py
+# pytest ./task1_joy/tests/test_calculator.py

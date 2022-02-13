@@ -1,5 +1,5 @@
-from task1.inner_logic.operations import _is_op
-from task1.inner_logic.string_helpers import split_nums_and_lists, split_str, is_digit
+from task1_joy.inner_logic.operations import _is_op
+from task1_joy.inner_logic.string_helpers import split_nums_and_lists, split_str, is_digit
 
 
 def get_items_before_open_brace(stack):

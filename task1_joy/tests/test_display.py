@@ -1,5 +1,5 @@
 import pytest
-from task1.display import display
+from task1_joy.display import display
 
 parse_test_data = (
     ([[1, 23, 15], 'first', 2, [[2], [2, [[[2, 3, 5]], 1], 2, 13, 3]]], "[1 23 15] first 2 [[2] [2 [[[2 3 5]] 1] 2 13 3]]"),
@@ -12,4 +12,4 @@ def test_parse(lst, expected_result):
     assert display(lst) == expected_result
 
 
-# pytest ./task1/tests/test_display.py
+# pytest ./task1_joy/tests/test_display.py

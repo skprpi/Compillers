@@ -1,5 +1,5 @@
 import pytest
-from task1.parser import parse
+from task1_joy.parser import parse
 
 parse_test_data = (
     (" [1 23 15] first 2  [[2] [2 [[[]]]  3]]", [[1, 23, 15], 'first', 2, [[2], [2, [[[]]], 3]]]),
@@ -14,4 +14,4 @@ def test_parse(string_expression, expected_result):
     assert parse(string_expression) == expected_result
 
 
-# pytest ./task1/tests/test_parser.py
+# pytest ./task1_joy/tests/test_parser.py

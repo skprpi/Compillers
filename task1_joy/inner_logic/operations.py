@@ -1,4 +1,4 @@
-from task1.inner_logic.decorators import check_last_n_instances_before, check_len_before,\
+from task1_joy.inner_logic.decorators import check_last_n_instances_before, check_len_before,\
     check_last_n_expr_instances_before
 from copy import deepcopy
 
