@@ -19,12 +19,23 @@
 ;      "huh?"))
 
 
-(define (name lst)
-  (if (null? lst) (print 2) ( (car lst) (name (cdr lst))))
-  ('3)
+(define (sum lst)
+   (if (null? lst) '0 ( + (car lst) (sum (cdr lst))))
+  )
+
+(define (mul lst)
+   (if (null? lst) '0 ( * (car lst) (if (null? (cdr lst)) '1 ( mul (cdr lst)))))
+  )
+
+(define (butlast lst)
+   (if (null? lst) '() (if (null? (cdr lst)) '() ( cons (car lst) (butlast (cdr lst)))      ))
   )
 
 
-
-
-(name '(1 2 3))
+(sum '(1 2 3 4 5))
+(mul '(1 2 3))
+(mul '())
+(cons'a( cons 'b '()))
+(butlast '(1 2 3))
+(butlast '(1))
+(butlast '(1 2 3 4 5))
