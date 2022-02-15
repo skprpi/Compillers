@@ -41,5 +41,34 @@ function split_expr(expr) {
     return splited_expr;
 }
 
+function parse_helper(deep, splited_expr) {
+    var stack = []
+    while (splited_expr.length > 0) {
+        if (splited_expr[0] == '(') {
+            splited_expr.shift()
+            stack.push(parse_helper(deep + 1, splited_expr))
+        }
+        else if (splited_expr[0] == ')') {
+            splited_expr.shift()
+            if (deep == 0) {
+                throw new Error('Needs ( for current )');
+            }
+            return stack;
+        } else {
+            stack.push(splited_expr[0])
+            splited_expr.shift();
+        }
+    }
+    if (deep != 0) {
+        throw new Error('Expected )');
+    }
+    return stack
+}
 
-module.exports = { split_expr }
+
+function parse(expr) {
+    return parse_helper(0, split_expr(expr))
+}
+
+
+export { parse }
