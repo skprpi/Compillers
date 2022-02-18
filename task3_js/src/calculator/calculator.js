@@ -89,38 +89,6 @@ function div_op(lst) {
 }
 
 
-function car_op(lst) {
-    if (lst.length != 1 || !Array.isArray(lst)) {
-        throw new Error('Expected one Array argument')
-    }
-    const res = make_op(lst[0])['data'][0]
-    if (is_digit(res)) {
-        return Number(res)
-    }
-    return res
-}
-
-function cdr_op(lst) {
-    if (lst.length != 1 || !Array.isArray(lst)) {
-        throw new Error('Expected one Array argument')
-    }
-    let res = make_op(lst[0])['data']
-    if (res.length == 0) {
-        throw new Error('Can not do "cdr" for an empty array')
-    }
-    res.shift()
-    return {'data': res}
-}
-
-
-
-function quote_op(lst) {
-    if (lst.length != 1 || !Array.isArray(lst)) {
-        throw new Error('Expected one Array argument')
-    }
-    return {'data': lst[0]};
-}
-
 
 function is_op(op) {
     return op in ops;
@@ -177,9 +145,6 @@ const ops = {
     '-': minus_op,
     '/': div_op,
     '*': mul_op,
-    'quote': quote_op,
-    'car': car_op,
-    'cdr': cdr_op,
 }
 
 var symbols = {}

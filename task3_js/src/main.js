@@ -9,5 +9,5 @@ import {calc} from "./calculator/calculator.js"
 // parsed_lst = parse('(+ 1 2 3 (* 1 2 3) (/ 1) (/ 100 2 2) )') // 38
 // console.log(...calc(parsed_lst))
 
-var parsed_lst = parse('(+ 1 2 3 ( car (cdr (cdr(quote(1 2 3 ))))))') // 38
+var parsed_lst = parse('(+ 1 2 (* 2 3))') // 38
 console.log(...calc(parsed_lst))
