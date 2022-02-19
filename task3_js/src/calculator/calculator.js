@@ -1,44 +1,35 @@
 function numberExceptionCheck(el) {
-    if (is_op(el)) {
-        throw new Error('Wrong expression! Expected single operation')
-    }
     if (!is_digit(el)) {
         throw new Error('Wrong expression! Expected digit')
     }
 }
 
-function cloneArr(arr) {
-    return arr
+function emptyListArgumentException(lst) {
+    if (lst.length === 0) {
+        throw new Error('Expected arguments! Zero argument got!')
+    }
 }
 
 function sum_op(lst) {
     // (+)       -> 0
     // (+ 2)     -> 2
     // (+ 2 3 4) -> 10
-    var sum = 0
+    var res = 0
     for (var i = 0; i < lst.length; i++) {
-        var el = lst[i]
-        if (Array.isArray(el)) {
-            el = make_op(cloneArr(el))
-        }
-        numberExceptionCheck(el)
-        sum += Number(el) 
+        numberExceptionCheck(lst[i])
+        res += Number(lst[i]) 
     }
-    return sum
+    return res
 }
 
 function mul_op(lst) {
     // (*)  -> 1
-    var mul = 1
+    var res = 1
     for (var i = 0; i < lst.length; i++) {
-        var el = lst[i]
-        if (Array.isArray(el)) {
-            el = make_op(cloneArr(el))
-        }
-        numberExceptionCheck(el)
-        mul *= Number(el) 
+        numberExceptionCheck(lst[i])
+        res *= Number(lst[i]) 
     }
-    return mul
+    return res
 }
 
 function minus_op(lst) {
@@ -46,22 +37,13 @@ function minus_op(lst) {
     // (-100) -> Error
     // (- 100) -> -100
     // (-100 3 2) -> 95
-    if (lst.length == 0) {
-        throw new Error('List argument missmached')
-    }
+    emptyListArgumentException(lst)
     var res = 0
     for (var i = 0; i < lst.length; i++) {
-        var el = lst[i]
-        if (Array.isArray(el)) {
-            el = make_op(cloneArr(el))
-        }
-        numberExceptionCheck(el)
-        res -= Number(el) 
+        numberExceptionCheck(lst[i])
+        res -= Number(lst[i]) 
     }
-    if (lst.length > 1) {
-        res += lst[0] * 2
-    }
-    return res
+    return lst.length > 1 ? res + lst[0] * 2: res
 }
 
 function div_op(lst) {
@@ -69,25 +51,17 @@ function div_op(lst) {
     // (/100)       -> 0   (1 / 100)
     // (/ 100 2)    -> 50
     // (/ 100 2 2)  -> 25
-    if (lst.length == 0) {
-        throw new Error('List argument missmached')
-    }
+    emptyListArgumentException(lst)
     if (lst.length == 1) {
         return 1 / lst[0]
     }
-
     var res = lst[0]
     for (var i = 1; i < lst.length; i++) {
-        var el = lst[i]
-        if (Array.isArray(el)) {
-            el = make_op(cloneArr(el))
-        }
-        numberExceptionCheck(el)
-        res /= Number(el)
+        numberExceptionCheck(lst[i])
+        res /= Number(lst[i])
     }
     return res
 }
-
 
 
 function is_op(op) {
@@ -103,15 +77,9 @@ function is_symbol(symbol) {
 }
 
 function make_op(lst) {
-    var head = cloneArr(lst[0])
+    const head = lst[0]
     lst.shift()
-    if (is_op(head)) {
-        return ops[head](lst)
-    } else if (is_symbol(head)) {
-        return symbols[head](lst)
-    }
-    console.log(lst)
-    throw new Error('Wrong expression! Expected single operation')
+    return ops[head](lst)
 }
 
 function is_digit(elem) {
@@ -131,11 +99,39 @@ function is_digit(elem) {
     return true
 }
 
-function calc(lst) {
+function calc(inLst) {
+    // считает сначал все аргументы
+    // потом на посчитанных аргументах просто выполняет операцию
+
+    const op = inLst[0]
+    if (!is_op(op)) {
+        throw new Error('Expected a procedure that can be applied to arguments')
+    }
+
+    var lst = inLst.slice()
+
+    for (var i = 1; i < lst.length; i++) {
+        if (Array.isArray(lst[i])) {
+            lst[i] = calc(lst[i])
+        }
+        if (is_op(lst[i]) || is_data_op(lst[i])) {
+            throw new Error('Wrong expression! Expected single operation')
+        }
+    }
+    return make_op(lst)
+}
+
+function first_level_calc(lst) {
+    // считает сначал все аргументы
+    // потом на посчитанных аргументах просто выполняет операцию
     var res = []
     for (var i = 0; i < lst.length; i++) {
-        const tmp = make_op(cloneArr(lst[i]))
-        res.push(tmp)
+        if (Array.isArray(lst[i])) {
+            res.push(calc(lst[i]))
+        } else {
+            // number, op, data_op
+            res.push(lst[i])
+        }
     }
     return res
 }
@@ -150,4 +146,4 @@ const ops = {
 var symbols = {}
 
 
-export { calc }
+export { first_level_calc }
