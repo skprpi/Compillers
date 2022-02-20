@@ -1,6 +1,22 @@
 {
-    "type": "module",
-    "dependencies": {
-        "lodash.clonedeep": "^4.5.0"
-    }
+  "type": "module",
+  "dependencies": {
+    "lodash.clonedeep": "^4.5.0"
+  },
+  "name": "task3_js",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "babel src --out-dir dist --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@babel/plugin-proposal-decorators": "^7.17.2",
+    "@babel/preset-env": "^7.16.11",
+    "nodemon": "^2.0.15"
+  }
 }

@@ -10,6 +10,19 @@ function emptyListArgumentException(lst) {
     }
 }
 
+function fixedSizeListArgumentException(lst, cnt) {
+    if (lst.length !== cnt) {
+        throw new Error(`Expected ${cnt} arguments, but ${lst.length} got!`)
+    }
+}
+
+function oneListArgumentCheck(lst) {
+    fixedSizeListArgumentException(lst, 1)
+    if (!Array.isArray(lst[0])) {
+        throw new Error(`Expected Array type for argument`)
+    }
+}
+
 function sum_op(lst) {
     // (+)       -> 0
     // (+ 2)     -> 2
@@ -63,6 +76,39 @@ function div_op(lst) {
     return res
 }
 
+function quote_op(lst) {
+    oneListArgumentCheck(lst)
+    return lst[0].slice()
+}
+
+function car_op(lst) {
+    oneListArgumentCheck(lst)
+    if (Array.isArray(lst[0][0])) {
+        return lst[0][0].slice()
+    }
+    if (is_digit(lst[0][0])) {
+        return Number(lst[0][0])
+    }
+    // got string
+    return lst[0][0]
+}
+
+function cdr_op(lst) {
+    oneListArgumentCheck(lst)
+    const res = lst[0].slice(1)
+    return res
+}
+
+function cons_op(lst) {
+    // (cons 'a '(2)) -> '(a 2)
+    fixedSizeListArgumentException(lst, 2)
+    if (!Array.isArray(lst[1])) {
+        throw new Error(`Expected Array type for argument`)
+    }
+    var arg = is_digit(lst[0]) ? '' + lst[0] : lst[0].slice()
+    return [arg].concat(lst[1].slice())
+}
+
 
 function is_op(op) {
     return op in ops;
@@ -104,11 +150,16 @@ function calc(inLst) {
     // потом на посчитанных аргументах просто выполняет операцию
 
     const op = inLst[0]
+
     if (!is_op(op)) {
         throw new Error('Expected a procedure that can be applied to arguments')
     }
 
     var lst = inLst.slice()
+
+    if (is_data_op(op)) {
+        return make_op(lst)
+    }
 
     for (var i = 1; i < lst.length; i++) {
         if (Array.isArray(lst[i])) {
@@ -141,9 +192,12 @@ const ops = {
     '-': minus_op,
     '/': div_op,
     '*': mul_op,
+    'quote': quote_op,
+    'car': car_op,
+    'cdr': cdr_op,
+    'cons': cons_op,
 }
 
 var symbols = {}
-
 
 export { first_level_calc }
