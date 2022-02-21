@@ -23,6 +23,15 @@ function oneListArgumentCheck(lst) {
     }
 }
 
+function condOpArgumentCheck(lst) {
+    if (!Array.isArray(lst)) {
+        throw new Error(`Expected Array type for argument`)
+    }
+    for (var i = 0; i < lst.length; i++) {
+        fixedSizeListArgumentException(lst[i], 2)
+    }
+}
+
 function sum_op(lst) {
     // (+)       -> 0
     // (+ 2)     -> 2
@@ -78,7 +87,7 @@ function div_op(lst) {
 
 function quote_op(lst) {
     oneListArgumentCheck(lst)
-    return lst[0].slice()
+    return lst[0]
 }
 
 function car_op(lst) {
@@ -86,27 +95,122 @@ function car_op(lst) {
     if (Array.isArray(lst[0][0])) {
         return lst[0][0].slice()
     }
-    if (is_digit(lst[0][0])) {
+    if (lst[0].length > 0 && is_digit(lst[0][0])) {
         return Number(lst[0][0])
     }
-    // got string
+
+    if (lst[0].length == 0) {
+        throw new Error(`Got empty list`)
+    }
+    // got string ot emptyList
     return lst[0][0]
 }
 
 function cdr_op(lst) {
     oneListArgumentCheck(lst)
-    const res = lst[0].slice(1)
-    return res
+    return lst[0].slice(1)
 }
 
 function cons_op(lst) {
     // (cons 'a '(2)) -> '(a 2)
     fixedSizeListArgumentException(lst, 2)
     if (!Array.isArray(lst[1])) {
-        throw new Error(`Expected Array type for argument`)
+        throw new Error(`Expected Array type as an argument`)
     }
     var arg = is_digit(lst[0]) ? '' + lst[0] : lst[0].slice()
     return [arg].concat(lst[1].slice())
+}
+
+function logic_op(lst, func) {
+    emptyListArgumentException(lst)
+    var res = true
+    for (var i = 0; i < lst.length; i++) {
+        if (!is_digit(lst[i])) {
+            throw new Error(`The expected number of arguments does not match the given number`)
+        } else if (i > 0) {
+            res = res && func(Number(lst[i - 1]), Number(lst[i]))
+        }
+    }
+    return toLispBool(res)
+}
+
+function eq_op(inLst) {
+    return logic_op(inLst.slice(), (a, b) => { return a === b; })
+}
+
+function gr_op(inLst) {
+    return logic_op(inLst.slice(), (a, b) => { return a > b; })
+}
+
+function greq_op(inLst) {
+    return logic_op(inLst.slice(), (a, b) => { return a >= b; })
+}
+
+function lo_op(inLst) {
+    return logic_op(inLst.slice(), (a, b) => { return a < b; })
+}
+
+function loeq_op(inLst) {
+    return logic_op(inLst.slice(), (a, b) => { return a <= b; })
+}
+
+function null_op(inLst) {
+    oneListArgumentCheck(inLst)
+    return toLispBool(inLst[0].length === 0)
+}
+
+function help_if_func(val) {
+    if (Array.isArray(val)) {
+        return calc(val)
+    } else if (is_digit(val)) {
+        return Number(val)
+    }
+    return val
+}
+
+function if_op(inLst) {
+    var lst = inLst.slice(1)
+    fixedSizeListArgumentException(lst, 3)
+    var condition = calc(lst[0])
+    if (toJSBool(condition)) {
+        return calc(lst[1])
+    }
+    return calc(lst[2])
+}
+
+function cond_op(inLst) {
+    var lst = inLst.slice(1)
+    condOpArgumentCheck(lst)
+    for (var i = 0; i < lst.length; i++) {
+        if (toJSBool(calc(lst[i][0]))) {
+            return lst[i][1]
+        }
+    }
+    throw new Error(`Once of condition have to be #t`)
+}
+
+
+function toLispBool(val) {
+    if (typeof val !== 'boolean') {
+        throw new Error(`Expected Boolean type as an argument`)
+    }
+    return val ? '#t' : '#f'
+}
+
+function isLispBool(val) {
+    return val === '#t' || val === '#f'
+}
+
+function toJSBool(val) {
+    if (typeof val !== 'string') {
+        throw new Error(`Expected String type as an argument`)
+    }
+    if (val === '#t') {
+        return true;
+    } else if  (val === '#f') {
+        return false;
+    }
+    throw new Error(`Expected #t or #f as an argument`)
 }
 
 
@@ -145,11 +249,23 @@ function is_digit(elem) {
     return true
 }
 
+
+
 function calc(inLst) {
     // считает сначал все аргументы
     // потом на посчитанных аргументах просто выполняет операцию
 
+    if (is_digit(inLst)) {
+        return Number(inLst)
+    } else if (isLispBool(inLst)) {
+        return inLst
+    }
+
     const op = inLst[0]
+
+    if (op === 'if' || op === 'cond') {
+        return ops[op](inLst)
+    }
 
     if (!is_op(op)) {
         throw new Error('Expected a procedure that can be applied to arguments')
@@ -165,7 +281,7 @@ function calc(inLst) {
         if (Array.isArray(lst[i])) {
             lst[i] = calc(lst[i])
         }
-        if (is_op(lst[i]) || is_data_op(lst[i])) {
+        if (is_op(lst[i])) {
             throw new Error('Wrong expression! Expected single operation')
         }
     }
@@ -196,6 +312,14 @@ const ops = {
     'car': car_op,
     'cdr': cdr_op,
     'cons': cons_op,
+    '=': eq_op,
+    '>': gr_op,
+    '>=': greq_op,
+    '<': lo_op,
+    '<=': loeq_op,
+    'null?': null_op,
+    'if': if_op,
+    'cond': cond_op,
 }
 
 var symbols = {}
