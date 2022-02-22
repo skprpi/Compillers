@@ -32,6 +32,22 @@ function condOpArgumentCheck(lst) {
     }
 }
 
+function letArgumentCheck(lst) {
+    if (!Array.isArray(lst)) {
+        throw new Error(`Expected Array type for argument`)
+    }
+    if (lst.length < 2) {
+        throw new Error(`Expected at least 2 arguments`)
+    }
+    for (var i = 0; i < lst[0].length; i++) {
+        fixedSizeListArgumentException(lst[0][i], 2)
+        const newSymbolName = lst[0][i][0]
+        if (!is_posible_symbol(newSymbolName)) {
+            throw new Error(`In can not be the name of variable`)
+        }
+    }
+}
+
 function sum_op(lst) {
     // (+)       -> 0
     // (+ 2)     -> 2
@@ -159,35 +175,53 @@ function null_op(inLst) {
     return toLispBool(inLst[0].length === 0)
 }
 
-function help_if_func(val) {
-    if (Array.isArray(val)) {
-        return calc(val)
-    } else if (is_digit(val)) {
-        return Number(val)
-    }
-    return val
-}
-
-function if_op(inLst) {
+function if_op(inLst, inSymbols) {
     var lst = inLst.slice(1)
     fixedSizeListArgumentException(lst, 3)
-    var condition = calc(lst[0])
+    var condition = calc(lst[0], inSymbols)
     if (toJSBool(condition)) {
-        return calc(lst[1])
+        return calc(lst[1], inSymbols)
     }
-    return calc(lst[2])
+    return calc(lst[2], inSymbols)
 }
 
-function cond_op(inLst) {
+function cond_op(inLst, inSymbols) {
     var lst = inLst.slice(1)
     condOpArgumentCheck(lst)
     for (var i = 0; i < lst.length; i++) {
-        if (toJSBool(calc(lst[i][0]))) {
+        if (toJSBool(calc(lst[i][0], inSymbols))) {
             return lst[i][1]
         }
     }
     throw new Error(`Once of condition have to be #t`)
 }
+
+function let_op(inLst, inSymbols) {
+    var lst = inLst.slice(1)
+    var symbols = {}
+    var dupCheck = new Set()
+    Object.assign(symbols, inSymbols)
+    letArgumentCheck(lst)
+
+    // Create new symbols
+    for (var i = 0; i < lst[0].length; i++) {
+        const newSymbolName = lst[0][i][0]
+        const newSymbolVal = calc(lst[0][i][1], inSymbols)
+        if (dupCheck.has(newSymbolName)) {
+            throw new Error(`Can not create symbols with the same name`)
+        }
+        dupCheck.add(newSymbolName)
+        symbols[newSymbolName] = newSymbolVal
+    }
+
+    // Calculate the rest values
+    var res = 0
+    for (var i = 1; i < lst.length; i++) {
+        res = calc(lst[i], symbols)
+    }
+    return res
+}
+
 
 
 function toLispBool(val) {
@@ -215,15 +249,37 @@ function toJSBool(val) {
 
 
 function is_op(op) {
-    return op in ops;
+    return op in ops || is_special_op(op);
+}
+
+function is_special_op(op) {
+    return op in special_op
 }
 
 function is_data_op(op) {
     return op === 'quote';
 }
 
-function is_symbol(symbol) {
+function is_symbol(symbol, symbols) {
     return symbol in symbols;
+}
+
+function get_symbol(symbol, symbols) {
+    if (!(symbol in symbols)) {
+        throw new Error(`Undefined symbol`)
+    }
+    if (Array.isArray(symbols[symbol])) {
+        return symbols[symbol].slice()
+    }
+    if (is_digit(symbols[symbol])) {
+        return Number(symbols[symbol])
+    }
+    // got string
+    return symbols[symbol].slice();
+}
+
+function is_posible_symbol(val) {
+    return (!(is_digit(val) || Array.isArray(val) || typeof val !== 'string'))
 }
 
 function make_op(lst) {
@@ -251,10 +307,12 @@ function is_digit(elem) {
 
 
 
-function calc(inLst) {
+function calc(inLst, inSymbols) {
     // считает сначал все аргументы
     // потом на посчитанных аргументах просто выполняет операцию
 
+    console.log(inLst)
+    
     if (is_digit(inLst)) {
         return Number(inLst)
     } else if (isLispBool(inLst)) {
@@ -263,8 +321,12 @@ function calc(inLst) {
 
     const op = inLst[0]
 
-    if (op === 'if' || op === 'cond') {
-        return ops[op](inLst)
+    if (is_symbol(op, inSymbols)) {
+        return get_symbol(op, inSymbols)
+    }
+
+    if (is_special_op(op)) {
+        return special_op[op](inLst, inSymbols)
     }
 
     if (!is_op(op)) {
@@ -278,8 +340,8 @@ function calc(inLst) {
     }
 
     for (var i = 1; i < lst.length; i++) {
-        if (Array.isArray(lst[i])) {
-            lst[i] = calc(lst[i])
+        if (Array.isArray(lst[i]) || is_symbol(lst[i], inSymbols)) {
+            lst[i] = calc(lst[i], inSymbols)
         }
         if (is_op(lst[i])) {
             throw new Error('Wrong expression! Expected single operation')
@@ -294,7 +356,7 @@ function first_level_calc(lst) {
     var res = []
     for (var i = 0; i < lst.length; i++) {
         if (Array.isArray(lst[i])) {
-            res.push(calc(lst[i]))
+            res.push(calc(lst[i], {}))
         } else {
             // number, op, data_op
             res.push(lst[i])
@@ -318,10 +380,12 @@ const ops = {
     '<': lo_op,
     '<=': loeq_op,
     'null?': null_op,
-    'if': if_op,
-    'cond': cond_op,
 }
 
-var symbols = {}
+const special_op = {
+    'if': if_op,
+    'cond': cond_op,
+    'let': let_op,
+}
 
 export { first_level_calc }
