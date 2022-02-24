@@ -14,8 +14,10 @@ import {first_level_calc} from "./calculator/calculator.js"
 // var parsed_lst = parse('2')
 
 
-var parsed_lst = parse('(let ((a 2) (b 30)) (+ a b))    (let ((a 2) (b 30)) a b)   (let ((a 2) (b 3)) (let ((a 3) (b 4)) (+ a b)) a)  (let ((a (quote(1 2 3))) (b 3)) (car a))  (let ((a (quote(1 2 3))) (b 3)) (cons a (quote(1 2))))')  // 32 30 2 1 [ [ '1', '2', '3' ], '1', '2' ]
+//var parsed_lst = parse('(let ((a 2) (b 30)) (+ a b))    (let ((a 2) (b 30)) a b)   (let ((a 2) (b 3)) (let ((a 3) (b 4)) (+ a b)) a)  (let ((a (quote(1 2 3))) (b 3)) (car a))  (let ((a (quote(1 2 3))) (b 3)) (cons a (quote(1 2))))')  // 32 30 2 1 [ [ '1', '2', '3' ], '1', '2' ]
+//var parsed_lst = parse('(let((x 42)) x)')
 
+var parsed_lst = parse('(define b 10) ((lambda (a) (cons (+ a b) (quote(123)))) 2)')
 console.log(...first_level_calc(parsed_lst))
 
 //var a = {'a': (2, 3, 4)}

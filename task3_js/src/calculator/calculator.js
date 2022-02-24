@@ -32,6 +32,26 @@ function condOpArgumentCheck(lst) {
     }
 }
 
+function lambdaArgumentCheck(lst) {
+    if (!Array.isArray(lst)) {
+        throw new Error(`Expected Array type for argument`)
+    }
+    fixedSizeListArgumentException(lst, 3)
+    if (!Array.isArray(lst[1]) || !Array.isArray(lst[2])) {
+        throw new Error(`Expected Array type for argument`)
+    }
+    // argument list
+    for (var i = 0; i < lst[1].length; i++) {
+        if (!is_posible_symbol(lst[1][i])) {
+            throw new Error(`Expected name of function`)
+        }
+    }
+    
+    if (lst[2].length === 0) {
+        throw new Error(`Lambda have to return value!`)
+    }
+}
+
 function letArgumentCheck(lst) {
     if (!Array.isArray(lst)) {
         throw new Error(`Expected Array type for argument`)
@@ -222,7 +242,37 @@ function let_op(inLst, inSymbols) {
     return res
 }
 
+function lambda_op(inLst, inSymbols) {
+    lambdaArgumentCheck(inLst[0])
+    const valueList = inLst.slice(1)
+    const lambdaArgs = inLst[0][1]
 
+    if (valueList.length !== lambdaArgs.length) {
+        throw new Error(`Lambda got least or few arguments`)
+    }
+
+    var symbols = {}
+    var dupCheck = new Set()
+    Object.assign(symbols, inSymbols)
+
+    for (var i = 0; i < lambdaArgs.length; i++) {
+        const newSymbolName = lambdaArgs[i]
+        const newSymbolVal = valueList[i]
+        if (dupCheck.has(newSymbolName)) {
+            throw new Error(`Can not create symbols with the same name`)
+        }
+        dupCheck.add(newSymbolName)
+        symbols[newSymbolName] = newSymbolVal
+    }
+    return calc(inLst[0][2], symbols)
+}
+
+function define_op(inLst) {
+    fixedSizeListArgumentException(inLst, 3)
+    const symbol = inLst[1]
+    const value = inLst[2]
+    global_symbol[symbol] = value
+}
 
 function toLispBool(val) {
     if (typeof val !== 'boolean') {
@@ -233,6 +283,13 @@ function toLispBool(val) {
 
 function isLispBool(val) {
     return val === '#t' || val === '#f'
+}
+
+function isLambda(inLst) {
+    if (!Array.isArray(inLst) || inLst.length === 0) {
+        return false
+    }
+    return typeof inLst[0] === 'string' && inLst[0] === 'lambda'
 }
 
 function toJSBool(val) {
@@ -261,21 +318,23 @@ function is_data_op(op) {
 }
 
 function is_symbol(symbol, symbols) {
-    return symbol in symbols;
+    return symbol in symbols || symbol in global_symbol;
 }
 
 function get_symbol(symbol, symbols) {
-    if (!(symbol in symbols)) {
+    if (!(symbol in symbols) && !(symbol in global_symbol)) {
         throw new Error(`Undefined symbol`)
     }
-    if (Array.isArray(symbols[symbol])) {
-        return symbols[symbol].slice()
+    const res= symbol in symbols ? symbols[symbol] : global_symbol[symbol]
+
+    if (Array.isArray(res)) {
+        return res.slice()
     }
-    if (is_digit(symbols[symbol])) {
-        return Number(symbols[symbol])
+    if (is_digit(res)) {
+        return Number(res)
     }
     // got string
-    return symbols[symbol].slice();
+    return res.slice();
 }
 
 function is_posible_symbol(val) {
@@ -311,28 +370,29 @@ function calc(inLst, inSymbols) {
     // считает сначал все аргументы
     // потом на посчитанных аргументах просто выполняет операцию
 
-    console.log(inLst)
-    
     if (is_digit(inLst)) {
         return Number(inLst)
     } else if (isLispBool(inLst)) {
         return inLst
     }
 
-    const op = inLst[0]
+    var op = inLst[0]
 
-    if (is_symbol(op, inSymbols)) {
+    if (op in definition_op) {
+        definition_op[op](inLst)
+        return NaN
+    } else if (is_symbol(op, inSymbols)) {
         return get_symbol(op, inSymbols)
-    }
-
-    if (is_special_op(op)) {
+    }else if (is_special_op(op)) {
         return special_op[op](inLst, inSymbols)
     }
 
-    if (!is_op(op)) {
+    if (!isLambda(op) && Array.isArray(op)) {
+        op = calc(op, inSymbols)
+    }
+    if (!is_op(op) && !isLambda(op)) {
         throw new Error('Expected a procedure that can be applied to arguments')
     }
-
     var lst = inLst.slice()
 
     if (is_data_op(op)) {
@@ -346,6 +406,10 @@ function calc(inLst, inSymbols) {
         if (is_op(lst[i])) {
             throw new Error('Wrong expression! Expected single operation')
         }
+    }
+
+    if (isLambda(op)) {
+        return func_op['lambda'](lst, inSymbols)
     }
     return make_op(lst)
 }
@@ -387,5 +451,15 @@ const special_op = {
     'cond': cond_op,
     'let': let_op,
 }
+
+const func_op = {
+    'lambda': lambda_op,
+}
+
+const definition_op = {
+    'define': define_op,
+}
+
+var global_symbol = {}
 
 export { first_level_calc }
