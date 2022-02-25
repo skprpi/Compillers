@@ -8,7 +8,7 @@ function push_chank(splited_expr, chank) {
 }
 
 function spilt_by_char(splited_expr, chr, chank) {
-    if (chr === ' ') {
+    if (chr === ' ' || chr == '\r' || chr == '\n') {
         chank = push_chank(splited_expr, chank)
     }
     else if (chr === '(') {

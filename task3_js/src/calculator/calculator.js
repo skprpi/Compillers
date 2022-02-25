@@ -37,7 +37,7 @@ function lambdaArgumentCheck(lst) {
         throw new Error(`Expected Array type for argument`)
     }
     fixedSizeListArgumentException(lst, 3)
-    if (!Array.isArray(lst[1]) || !Array.isArray(lst[2])) {
+    if (!Array.isArray(lst[1])) {
         throw new Error(`Expected Array type for argument`)
     }
     // argument list
@@ -45,10 +45,6 @@ function lambdaArgumentCheck(lst) {
         if (!is_posible_symbol(lst[1][i])) {
             throw new Error(`Expected name of function`)
         }
-    }
-    
-    if (lst[2].length === 0) {
-        throw new Error(`Lambda have to return value!`)
     }
 }
 
@@ -123,38 +119,40 @@ function div_op(lst) {
 
 function quote_op(lst) {
     oneListArgumentCheck(lst)
-    return lst[0]
+    return ['quote', lst[0]]
 }
 
 function car_op(lst) {
     oneListArgumentCheck(lst)
-    if (Array.isArray(lst[0][0])) {
-        return lst[0][0].slice()
-    }
-    if (lst[0].length > 0 && is_digit(lst[0][0])) {
-        return Number(lst[0][0])
+    if (!is_data(lst[0])) {
+        throw new Error(`Expected data as argument`)
     }
 
-    if (lst[0].length == 0) {
-        throw new Error(`Got empty list`)
+    const lstArg = lst[0][1]
+    if (Array.isArray(lstArg[0])) {
+        return ['quote', lstArg[0].slice()]
     }
-    // got string ot emptyList
-    return lst[0][0]
+    return ['quote', lstArg[0]]
 }
 
 function cdr_op(lst) {
     oneListArgumentCheck(lst)
-    return lst[0].slice(1)
+    if (!is_data(lst[0])) {
+        throw new Error(`Expected data as argument`)
+    }
+    return ['quote', lst[0][1].slice(1)] 
 }
 
 function cons_op(lst) {
     // (cons 'a '(2)) -> '(a 2)
     fixedSizeListArgumentException(lst, 2)
-    if (!Array.isArray(lst[1])) {
-        throw new Error(`Expected Array type as an argument`)
+    console.log(lst)
+    const lstArgs = lst[1][1]
+    if (!is_data(lst[1]) || !Array.isArray(lstArgs)) {
+        throw new Error(`Expected data array as second argument`)
     }
     var arg = is_digit(lst[0]) ? '' + lst[0] : lst[0].slice()
-    return [arg].concat(lst[1].slice())
+    return ['quote', [arg].concat(lstArgs.slice())]
 }
 
 function logic_op(lst, func) {
@@ -192,7 +190,10 @@ function loeq_op(inLst) {
 
 function null_op(inLst) {
     oneListArgumentCheck(inLst)
-    return toLispBool(inLst[0].length === 0)
+    if (!is_data(inLst[0])) {
+        throw new Error(`Expected data as argument`)
+    }
+    return toLispBool(inLst[0][1].length === 0)
 }
 
 function if_op(inLst, inSymbols) {
@@ -200,6 +201,7 @@ function if_op(inLst, inSymbols) {
     fixedSizeListArgumentException(lst, 3)
     var condition = calc(lst[0], inSymbols)
     if (toJSBool(condition)) {
+        
         return calc(lst[1], inSymbols)
     }
     return calc(lst[2], inSymbols)
@@ -246,6 +248,7 @@ function lambda_op(inLst, inSymbols) {
     lambdaArgumentCheck(inLst[0])
     const valueList = inLst.slice(1)
     const lambdaArgs = inLst[0][1]
+
 
     if (valueList.length !== lambdaArgs.length) {
         throw new Error(`Lambda got least or few arguments`)
@@ -317,6 +320,13 @@ function is_data_op(op) {
     return op === 'quote';
 }
 
+function is_data(lst) {
+    if (Array.isArray(lst) && is_data_op(lst[0])) {
+        return true;
+    }
+    return false;
+}
+
 function is_symbol(symbol, symbols) {
     return symbol in symbols || symbol in global_symbol;
 }
@@ -369,34 +379,39 @@ function is_digit(elem) {
 function calc(inLst, inSymbols) {
     // считает сначал все аргументы
     // потом на посчитанных аргументах просто выполняет операцию
-
     if (is_digit(inLst)) {
         return Number(inLst)
     } else if (isLispBool(inLst)) {
         return inLst
+    } else if (is_data(inLst)) {
+        return inLst
+    } else if (is_symbol(inLst, inSymbols)) {
+        return get_symbol(inLst, inSymbols)
     }
 
     var op = inLst[0]
+    
 
     if (op in definition_op) {
         definition_op[op](inLst)
         return NaN
     } else if (is_symbol(op, inSymbols)) {
-        return get_symbol(op, inSymbols)
-    }else if (is_special_op(op)) {
+        op = get_symbol(op, inSymbols)
+    } else if (is_special_op(op)) {
         return special_op[op](inLst, inSymbols)
     }
-
+    
     if (!isLambda(op) && Array.isArray(op)) {
         op = calc(op, inSymbols)
     }
-    if (!is_op(op) && !isLambda(op)) {
+
+    if (!is_op(op) && !isLambda(op) && !is_data_op(op)) {
         throw new Error('Expected a procedure that can be applied to arguments')
     }
     var lst = inLst.slice()
 
-    if (is_data_op(op)) {
-        return make_op(lst)
+    if (lst[0] != op) {
+        lst[0] = op;
     }
 
     for (var i = 1; i < lst.length; i++) {
@@ -434,7 +449,6 @@ const ops = {
     '-': minus_op,
     '/': div_op,
     '*': mul_op,
-    'quote': quote_op,
     'car': car_op,
     'cdr': cdr_op,
     'cons': cons_op,
