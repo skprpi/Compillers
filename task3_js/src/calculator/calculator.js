@@ -397,6 +397,37 @@ function is_digit(elem) {
     return true
 }
 
+function lambdaPrecalc(inLst, nonArgumentSymbols) {
+    if (!Array.isArray(inLst)) {
+        return inLst
+    }
+    var lst = inLst.slice()
+    for (var i = 0; i < lst.length; i++) {
+        if (is_symbol(lst[i], nonArgumentSymbols)) {
+            lst[i] = get_symbol(lst[i], nonArgumentSymbols)
+        } else if (Array.isArray(lst[i]) && !isLambda(lst[i])) {
+            lst[i] = lambdaPrecalc(lst[i], nonArgumentSymbols)
+        }
+    }
+    return lst
+}
+
+function lambdaPrecalcMakeSymbols(lambdaExpr, inSymbols) {
+    if (!isLambda(lambdaExpr)) {
+        throw new Error('Expected lambda expr')
+    }
+    lambdaArgumentCheck(lambdaExpr)
+    var symbols = {}
+    const lambdaArgs = lambdaExpr[1]
+    Object.assign(symbols, inSymbols)
+    for (var i = 0; i < lambdaArgs; i++) {
+        if (lambdaArgs[i] in symbols) {
+            delete symbols[lambdaArgs[i]]
+        }
+    }
+    return symbols
+}
+
 function calc(inLst, inSymbols) {
     // считает сначал все аргументы
     // потом на посчитанных аргументах просто выполняет операцию
@@ -439,11 +470,14 @@ function calc(inLst, inSymbols) {
     for (var i = 1; i < lst.length; i++) {
         if (is_symbol(lst[i], inSymbols)) {
             lst[i] = get_symbol(lst[i], inSymbols)
+        } else if (isLambda(lst[i])) {
+            const lambdaExprDict = lambdaPrecalcMakeSymbols(lst[i], inSymbols)
+            lst[i] = lambdaPrecalc(lst[i], lambdaExprDict)
         } else if (Array.isArray(lst[i]) && !isLambda(lst[i])) {
             lst[i] = calc(lst[i], inSymbols)
         } 
 
-        if (is_op(lst[i]) || isLambda(lst[i])) {
+        if (is_op(lst[i])) {
             throw new Error('Wrong expression! Expected single operation')
         }
     }
