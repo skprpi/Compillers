@@ -132,6 +132,9 @@ function car_op(lst) {
     if (Array.isArray(lstArg[0])) {
         return ['quote', lstArg[0].slice()]
     }
+    if (is_digit(lstArg[0])) {
+        return lstArg[0]
+    }
     return ['quote', lstArg[0]]
 }
 
@@ -146,7 +149,6 @@ function cdr_op(lst) {
 function cons_op(lst) {
     // (cons 'a '(2)) -> '(a 2)
     fixedSizeListArgumentException(lst, 2)
-    console.log(lst)
     const lstArgs = lst[1][1]
     if (!is_data(lst[1]) || !Array.isArray(lstArgs)) {
         throw new Error(`Expected data array as second argument`)
@@ -159,10 +161,14 @@ function logic_op(lst, func) {
     emptyListArgumentException(lst)
     var res = true
     for (var i = 0; i < lst.length; i++) {
-        if (!is_digit(lst[i])) {
-            throw new Error(`The expected number of arguments does not match the given number`)
+        if (!is_digit(lst[i]) && !isLispBool(lst[i])) {
+            throw new Error(`The expected number or bool of arguments does not match the given number`)
         } else if (i > 0) {
-            res = res && func(Number(lst[i - 1]), Number(lst[i]))
+            if (is_digit(lst[i])) {
+                res = res && func(Number(lst[i - 1]), Number(lst[i]))
+            } else {
+                res = res && func(lst[i - 1], lst[i])
+            }
         }
     }
     return toLispBool(res)
@@ -196,12 +202,22 @@ function null_op(inLst) {
     return toLispBool(inLst[0][1].length === 0)
 }
 
+function or_op(inLst) {
+    var res = false
+    for (var i = 0; i < inLst.length; i++) {
+        if (!isLispBool(inLst[i])) {
+            throw new Error(`Expected bool argument`)
+        }
+        res = res || toJSBool(inLst[i])
+    }
+    return toLispBool(res)
+}
+
 function if_op(inLst, inSymbols) {
     var lst = inLst.slice(1)
     fixedSizeListArgumentException(lst, 3)
     var condition = calc(lst[0], inSymbols)
     if (toJSBool(condition)) {
-        
         return calc(lst[1], inSymbols)
     }
     return calc(lst[2], inSymbols)
@@ -273,7 +289,7 @@ function lambda_op(inLst, inSymbols) {
 function define_op(inLst) {
     fixedSizeListArgumentException(inLst, 3)
     const symbol = inLst[1]
-    const value = inLst[2]
+    var value = inLst[2]
     global_symbol[symbol] = value
 }
 
@@ -335,7 +351,7 @@ function get_symbol(symbol, symbols) {
     if (!(symbol in symbols) && !(symbol in global_symbol)) {
         throw new Error(`Undefined symbol`)
     }
-    const res= symbol in symbols ? symbols[symbol] : global_symbol[symbol]
+    const res = symbol in symbols ? symbols[symbol] : global_symbol[symbol]
 
     if (Array.isArray(res)) {
         return res.slice()
@@ -344,7 +360,11 @@ function get_symbol(symbol, symbols) {
         return Number(res)
     }
     // got string
-    return res.slice();
+    if (typeof res === 'string') {
+        return res.slice();
+    }
+    // function
+    return res
 }
 
 function is_posible_symbol(val) {
@@ -359,7 +379,10 @@ function make_op(lst) {
 
 function is_digit(elem) {
     var i = 0
-    if (Array.isArray(elem)) {
+    if (typeof elem == 'number') {
+        return true
+    }
+    if (Array.isArray(elem) || typeof elem !== 'string') {
         return false
     }
     if (elem[0] == '-') {
@@ -374,7 +397,36 @@ function is_digit(elem) {
     return true
 }
 
+function lambdaPrecalc(inLst, nonArgumentSymbols) {
+    if (!Array.isArray(inLst)) {
+        return inLst
+    }
+    var lst = inLst.slice()
+    for (var i = 0; i < lst.length; i++) {
+        if (is_symbol(lst[i], nonArgumentSymbols)) {
+            lst[i] = get_symbol(lst[i], nonArgumentSymbols)
+        } else if (Array.isArray(lst[i]) && !isLambda(lst[i])) {
+            lst[i] = lambdaPrecalc(lst[i], nonArgumentSymbols)
+        }
+    }
+    return lst
+}
 
+function lambdaPrecalcMakeSymbols(lambdaExpr, inSymbols) {
+    if (!isLambda(lambdaExpr)) {
+        throw new Error('Expected lambda expr')
+    }
+    lambdaArgumentCheck(lambdaExpr)
+    var symbols = {}
+    const lambdaArgs = lambdaExpr[1]
+    Object.assign(symbols, inSymbols)
+    for (var i = 0; i < lambdaArgs; i++) {
+        if (lambdaArgs[i] in symbols) {
+            delete symbols[lambdaArgs[i]]
+        }
+    }
+    return symbols
+}
 
 function calc(inLst, inSymbols) {
     // считает сначал все аргументы
@@ -406,6 +458,7 @@ function calc(inLst, inSymbols) {
     }
 
     if (!is_op(op) && !isLambda(op) && !is_data_op(op)) {
+        console.log(op, inLst)
         throw new Error('Expected a procedure that can be applied to arguments')
     }
     var lst = inLst.slice()
@@ -415,9 +468,15 @@ function calc(inLst, inSymbols) {
     }
 
     for (var i = 1; i < lst.length; i++) {
-        if (Array.isArray(lst[i]) || is_symbol(lst[i], inSymbols)) {
+        if (is_symbol(lst[i], inSymbols)) {
+            lst[i] = get_symbol(lst[i], inSymbols)
+        } else if (isLambda(lst[i])) {
+            const lambdaExprDict = lambdaPrecalcMakeSymbols(lst[i], inSymbols)
+            lst[i] = lambdaPrecalc(lst[i], lambdaExprDict)
+        } else if (Array.isArray(lst[i]) && !isLambda(lst[i])) {
             lst[i] = calc(lst[i], inSymbols)
-        }
+        } 
+
         if (is_op(lst[i])) {
             throw new Error('Wrong expression! Expected single operation')
         }
@@ -458,6 +517,7 @@ const ops = {
     '<': lo_op,
     '<=': loeq_op,
     'null?': null_op,
+    'or': or_op,
 }
 
 const special_op = {

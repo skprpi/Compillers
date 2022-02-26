@@ -7,3 +7,39 @@
 
  
 (length (quote(1 2 3)))
+
+
+(define member ( lambda (lst guess_member)
+  (if (null? lst) #f (or (= guess_member (car lst)) (member (cdr lst) guess_member)))
+  ))
+
+
+(member (quote(1 2 3)) 4)
+(member (quote(1 2 3)) 1)
+
+
+(define append (lambda (lst1 lst2)
+  (if (null? lst1) lst2 (cons(car lst1) (append (cdr lst1) lst2) ) )
+  ))
+
+(append (quote(1 2 3)) (quote(4 5 6)))
+
+
+(define filter (lambda (fun lst)
+  ( if (null? lst) (quote()) (  if (fun (car lst)) (cons (car lst) (filter fun (cdr lst)) )  (filter fun (cdr lst))) )
+  ))
+
+
+(filter (lambda (x) (> x 0)) (quote(-1 -2 3 4 -5)) )
+
+(filter (lambda (x) (> x 0)) (quote(-1 -2 3 4 -5)) )
+
+(define lst (quote(2 1 -1 2 3)))
+(filter (lambda(x)( <= x (car lst))) (cdr lst))
+
+(define qsort (lambda (lst)
+  ( if (null? lst) (quote()) (  if (null? (cdr lst)) (cons (car lst) (quote())) ( append (append (qsort (filter (lambda(x)( <= x (car lst))) (cdr lst))  )  (cons (car lst) (quote()) ) )   (qsort (filter (lambda(x)( > x (car lst))) (cdr lst))) )))     
+  ))
+
+
+(qsort (quote(5 4 3 2 5)))
