@@ -23,23 +23,3 @@
   ))
 
 (append (quote(1 2 3)) (quote(4 5 6)))
-
-
-(define filter (lambda (fun lst)
-  ( if (null? lst) (quote()) (  if (fun (car lst)) (cons (car lst) (filter fun (cdr lst)) )  (filter fun (cdr lst))) )
-  ))
-
-
-(filter (lambda (x) (> x 0)) (quote(-1 -2 3 4 -5)) )
-
-(filter (lambda (x) (> x 0)) (quote(-1 -2 3 4 -5)) )
-
-(define lst (quote(2 1 -1 2 3)))
-(filter (lambda(x)( <= x (car lst))) (cdr lst))
-
-(define qsort (lambda (lst)
-  ( if (null? lst) (quote()) (  if (null? (cdr lst)) (cons (car lst) (quote())) ( append (append (qsort (filter (lambda(x)( <= x (car lst))) (cdr lst))  )  (cons (car lst) (quote()) ) )   (qsort (filter (lambda(x)( > x (car lst))) (cdr lst))) )))     
-  ))
-
-
-(qsort (quote(5 4 3 2 5)))
