@@ -36,6 +36,8 @@ function lambdaArgumentCheck(lst) {
     if (!Array.isArray(lst)) {
         throw new Error(`Expected Array type for argument`)
     }
+
+    console.log('check', lst)
     fixedSizeListArgumentException(lst, 3)
     if (!Array.isArray(lst[1])) {
         throw new Error(`Expected Array type for argument`)
@@ -129,13 +131,17 @@ function car_op(lst) {
     }
 
     const lstArg = lst[0][1]
+    if (lstArg.length === 0) {
+        throw new Error(`Car op needs to have at least 1 element of array`)
+    }
+
     if (Array.isArray(lstArg[0])) {
         return ['quote', lstArg[0].slice()]
     }
     if (is_digit(lstArg[0])) {
         return lstArg[0]
     }
-    return ['quote', lstArg[0]]
+    return ['quote', lstArg[0].slice()]
 }
 
 function cdr_op(lst) {
@@ -220,7 +226,11 @@ function if_op(inLst, inSymbols) {
     if (toJSBool(condition)) {
         return calc(lst[1], inSymbols)
     }
-    return calc(lst[2], inSymbols)
+    //console.log('if', inLst, 'sym', inSymbols)
+    console.log('if', inLst, inSymbols)
+    const res = calc(lst[2], inSymbols)
+    //console.log('res', res)
+    return res
 }
 
 function cond_op(inLst, inSymbols) {
@@ -235,6 +245,7 @@ function cond_op(inLst, inSymbols) {
 }
 
 function let_op(inLst, inSymbols) {
+    console.log('ERRROR!')
     var lst = inLst.slice(1)
     var symbols = {}
     var dupCheck = new Set()
@@ -244,10 +255,11 @@ function let_op(inLst, inSymbols) {
     // Create new symbols
     for (var i = 0; i < lst[0].length; i++) {
         const newSymbolName = lst[0][i][0]
-        const newSymbolVal = calc(lst[0][i][1], inSymbols)
         if (dupCheck.has(newSymbolName)) {
             throw new Error(`Can not create symbols with the same name`)
         }
+        const newSymbolVal = isLambda(lst[0][i][1]) ? func_op['lambda'](inLst, inSymbols) : calc(lst[0][i][1], inSymbols)
+        
         dupCheck.add(newSymbolName)
         symbols[newSymbolName] = newSymbolVal
     }
@@ -260,37 +272,50 @@ function let_op(inLst, inSymbols) {
     return res
 }
 
-function lambda_op(inLst, inSymbols) {
-    lambdaArgumentCheck(inLst[0])
-    const valueList = inLst.slice(1)
-    const lambdaArgs = inLst[0][1]
-
-
-    if (valueList.length !== lambdaArgs.length) {
-        throw new Error(`Lambda got least or few arguments`)
-    }
-
+function lambda_op(inLambdaExpr, inSymbols) {
     var symbols = {}
-    var dupCheck = new Set()
     Object.assign(symbols, inSymbols)
+    const lambdaExpr = inLambdaExpr.slice()
 
-    for (var i = 0; i < lambdaArgs.length; i++) {
-        const newSymbolName = lambdaArgs[i]
-        const newSymbolVal = valueList[i]
-        if (dupCheck.has(newSymbolName)) {
-            throw new Error(`Can not create symbols with the same name`)
+    function calcLambda(lambdaInArgs) {
+        console.log('hey', lambdaExpr, lambdaInArgs, inSymbols)
+        lambdaArgumentCheck(lambdaExpr)
+        const valueList = lambdaInArgs.slice(1)
+        const lambdaArgsName = lambdaExpr[1]
+
+        if (valueList.length !== lambdaArgsName.length) {
+            throw new Error(`Lambda got least or few arguments`)
         }
-        dupCheck.add(newSymbolName)
-        symbols[newSymbolName] = newSymbolVal
+
+        var dupCheck = new Set()
+        
+        for (var i = 0; i < lambdaArgsName.length; i++) {
+            const newSymbolName = lambdaArgsName[i]
+            const newSymbolVal = valueList[i]
+            if (dupCheck.has(newSymbolName)) {
+                throw new Error(`Can not create symbols with the same name`)
+            }
+            dupCheck.add(newSymbolName)
+            symbols[newSymbolName] = newSymbolVal
+        }
+        if (isLambda(lambdaExpr[2])) {
+            return func_op['lambda'](lambdaExpr[2], symbols)
+        }
+        return calc(lambdaExpr[2], symbols)
+
     }
-    return calc(inLst[0][2], symbols)
+    return calcLambda
 }
 
-function define_op(inLst) {
+function define_op(inLst, inSymbols) {
     fixedSizeListArgumentException(inLst, 3)
     const symbol = inLst[1]
-    var value = inLst[2]
+    var value = Array.isArray(inLst[2]) ? inLst[2].slice() : inLst[2]
+    if (isLambda(value)) {
+        value = func_op['lambda'](value, inSymbols)
+    }
     global_symbol[symbol] = value
+    return NaN
 }
 
 function toLispBool(val) {
@@ -309,6 +334,10 @@ function isLambda(inLst) {
         return false
     }
     return typeof inLst[0] === 'string' && inLst[0] === 'lambda'
+}
+
+function isParsedLambda(arg) {
+    return typeof arg === 'function'
 }
 
 function toJSBool(val) {
@@ -357,7 +386,7 @@ function get_symbol(symbol, symbols) {
         return res.slice()
     }
     if (is_digit(res)) {
-        return Number(res)
+        return res
     }
     // got string
     if (typeof res === 'string') {
@@ -371,7 +400,8 @@ function is_posible_symbol(val) {
     return (!(is_digit(val) || Array.isArray(val) || typeof val !== 'string'))
 }
 
-function make_op(lst) {
+function make_op(inLst) {
+    var lst = inLst.slice()
     const head = lst[0]
     lst.shift()
     return ops[head](lst)
@@ -385,7 +415,7 @@ function is_digit(elem) {
     if (Array.isArray(elem) || typeof elem !== 'string') {
         return false
     }
-    if (elem[0] == '-') {
+    if (elem[0] === '-') {
         i = 1
     }
     for (i; i < elem.length; i++) {
@@ -397,40 +427,11 @@ function is_digit(elem) {
     return true
 }
 
-function lambdaPrecalc(inLst, nonArgumentSymbols) {
-    if (!Array.isArray(inLst)) {
-        return inLst
-    }
-    var lst = inLst.slice()
-    for (var i = 0; i < lst.length; i++) {
-        if (is_symbol(lst[i], nonArgumentSymbols)) {
-            lst[i] = get_symbol(lst[i], nonArgumentSymbols)
-        } else if (Array.isArray(lst[i]) && !isLambda(lst[i])) {
-            lst[i] = lambdaPrecalc(lst[i], nonArgumentSymbols)
-        }
-    }
-    return lst
-}
-
-function lambdaPrecalcMakeSymbols(lambdaExpr, inSymbols) {
-    if (!isLambda(lambdaExpr)) {
-        throw new Error('Expected lambda expr')
-    }
-    lambdaArgumentCheck(lambdaExpr)
-    var symbols = {}
-    const lambdaArgs = lambdaExpr[1]
-    Object.assign(symbols, inSymbols)
-    for (var i = 0; i < lambdaArgs; i++) {
-        if (lambdaArgs[i] in symbols) {
-            delete symbols[lambdaArgs[i]]
-        }
-    }
-    return symbols
-}
 
 function calc(inLst, inSymbols) {
     // считает сначал все аргументы
     // потом на посчитанных аргументах просто выполняет операцию
+    
     if (is_digit(inLst)) {
         return Number(inLst)
     } else if (isLispBool(inLst)) {
@@ -442,28 +443,34 @@ function calc(inLst, inSymbols) {
     }
 
     var op = inLst[0]
-    
+    console.log(inSymbols)
+    const isFilter = op === 'filter' || op === 'append'
+
 
     if (op in definition_op) {
-        definition_op[op](inLst)
-        return NaN
+        return definition_op[op](inLst, inSymbols) // return Nan
     } else if (is_symbol(op, inSymbols)) {
         op = get_symbol(op, inSymbols)
     } else if (is_special_op(op)) {
         return special_op[op](inLst, inSymbols)
     }
+
+    
     
     if (!isLambda(op) && Array.isArray(op)) {
         op = calc(op, inSymbols)
     }
+    if (isLambda(op)) {
+        op = func_op['lambda'](inLst, inSymbols)
+    }
 
-    if (!is_op(op) && !isLambda(op) && !is_data_op(op)) {
-        console.log(op, inLst)
+    if (!is_op(op) && !isParsedLambda(op) && !is_data_op(op)) {
+        console.log(op)
         throw new Error('Expected a procedure that can be applied to arguments')
     }
     var lst = inLst.slice()
 
-    if (lst[0] != op) {
+    if (lst[0] !== op) {
         lst[0] = op;
     }
 
@@ -471,20 +478,24 @@ function calc(inLst, inSymbols) {
         if (is_symbol(lst[i], inSymbols)) {
             lst[i] = get_symbol(lst[i], inSymbols)
         } else if (isLambda(lst[i])) {
-            const lambdaExprDict = lambdaPrecalcMakeSymbols(lst[i], inSymbols)
-            lst[i] = lambdaPrecalc(lst[i], lambdaExprDict)
-        } else if (Array.isArray(lst[i]) && !isLambda(lst[i])) {
+            lst[i] = func_op['lambda'](lst[i], inSymbols) //     ?????????????????????????????
+        } else if (Array.isArray(lst[i])) {
             lst[i] = calc(lst[i], inSymbols)
         } 
 
-        if (is_op(lst[i])) {
+        if (!isParsedLambda(op) && is_op(lst[i])) {
             throw new Error('Wrong expression! Expected single operation')
         }
     }
 
-    if (isLambda(op)) {
-        return func_op['lambda'](lst, inSymbols)
+    if (isParsedLambda(op)) {
+        const ret_val = op(lst)
+        if (isFilter) {
+            //console.log('res', ret_val, 'original',inLst, inSymbols)
+        }
+        return ret_val
     }
+
     return make_op(lst)
 }
 

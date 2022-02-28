@@ -21,5 +21,13 @@ import * as fs from "fs"
 // var parsed_lst = parse('(define b 10) ((lambda (a) (cons (+ a b) (quote(123)))) 2)')
 // var parsed_lst = parse('(let ((x 42)) ((lambda (x) x) x))')
 
-let fileContent = fs.readFileSync("./src/examples/example1.txt", "utf8");
-console.log(first_level_calc(parse(fileContent)))
+//var inSymbols = {'a': 1, 'b': 2}
+//var b = ('lambda', 'a+a', 'a')
+//var res = calcLambda(b, inSymbols)
+//inSymbols['a'] = 3
+
+//console.log(res)
+
+let fileContent = fs.readFileSync("./examples/example1.txt", "utf8");
+console.log(...first_level_calc(parse(fileContent)))
+
