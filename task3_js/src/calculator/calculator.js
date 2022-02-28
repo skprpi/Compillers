@@ -1,3 +1,28 @@
+function deepCloneHelper(inLst) {
+    if (typeof inLst === 'string') {
+        return inLst.slice()
+    } else if (typeof  inLst === 'number') {
+        return inLst
+    } else if (typeof inLst === 'function' ){
+        return inLst
+    } else if (Array.isArray(inLst)) {
+        let res = []
+        for (const value of inLst) {
+            res.push(deepCloneHelper(value))
+        }
+        return res
+    }
+    throw new Error('Unexpected type got')
+}
+
+function deepClone(symbols) {
+    let res = {}
+    for (const [key, value] of Object.entries(symbols)) {
+        res[key.slice()] = deepCloneHelper(value)
+    }
+    return res
+}
+
 function numberExceptionCheck(el) {
     if (!is_digit(el)) {
         throw new Error('Wrong expression! Expected digit')
@@ -27,7 +52,7 @@ function condOpArgumentCheck(lst) {
     if (!Array.isArray(lst)) {
         throw new Error(`Expected Array type for argument`)
     }
-    for (var i = 0; i < lst.length; i++) {
+    for (let i = 0; i < lst.length; i++) {
         fixedSizeListArgumentException(lst[i], 2)
     }
 }
@@ -37,13 +62,12 @@ function lambdaArgumentCheck(lst) {
         throw new Error(`Expected Array type for argument`)
     }
 
-    console.log('check', lst)
     fixedSizeListArgumentException(lst, 3)
     if (!Array.isArray(lst[1])) {
         throw new Error(`Expected Array type for argument`)
     }
     // argument list
-    for (var i = 0; i < lst[1].length; i++) {
+    for (let i = 0; i < lst[1].length; i++) {
         if (!is_posible_symbol(lst[1][i])) {
             throw new Error(`Expected name of function`)
         }
@@ -57,7 +81,7 @@ function letArgumentCheck(lst) {
     if (lst.length < 2) {
         throw new Error(`Expected at least 2 arguments`)
     }
-    for (var i = 0; i < lst[0].length; i++) {
+    for (let i = 0; i < lst[0].length; i++) {
         fixedSizeListArgumentException(lst[0][i], 2)
         const newSymbolName = lst[0][i][0]
         if (!is_posible_symbol(newSymbolName)) {
@@ -70,8 +94,8 @@ function sum_op(lst) {
     // (+)       -> 0
     // (+ 2)     -> 2
     // (+ 2 3 4) -> 10
-    var res = 0
-    for (var i = 0; i < lst.length; i++) {
+    let res = 0
+    for (let i = 0; i < lst.length; i++) {
         numberExceptionCheck(lst[i])
         res += Number(lst[i]) 
     }
@@ -80,8 +104,8 @@ function sum_op(lst) {
 
 function mul_op(lst) {
     // (*)  -> 1
-    var res = 1
-    for (var i = 0; i < lst.length; i++) {
+    let res = 1
+    for (let i = 0; i < lst.length; i++) {
         numberExceptionCheck(lst[i])
         res *= Number(lst[i]) 
     }
@@ -94,8 +118,8 @@ function minus_op(lst) {
     // (- 100) -> -100
     // (-100 3 2) -> 95
     emptyListArgumentException(lst)
-    var res = 0
-    for (var i = 0; i < lst.length; i++) {
+    let res = 0
+    for (let i = 0; i < lst.length; i++) {
         numberExceptionCheck(lst[i])
         res -= Number(lst[i]) 
     }
@@ -108,20 +132,15 @@ function div_op(lst) {
     // (/ 100 2)    -> 50
     // (/ 100 2 2)  -> 25
     emptyListArgumentException(lst)
-    if (lst.length == 1) {
+    if (lst.length === 1) {
         return 1 / lst[0]
     }
-    var res = lst[0]
-    for (var i = 1; i < lst.length; i++) {
+    let res = lst[0]
+    for (let i = 1; i < lst.length; i++) {
         numberExceptionCheck(lst[i])
         res /= Number(lst[i])
     }
     return res
-}
-
-function quote_op(lst) {
-    oneListArgumentCheck(lst)
-    return ['quote', lst[0]]
 }
 
 function car_op(lst) {
@@ -159,14 +178,14 @@ function cons_op(lst) {
     if (!is_data(lst[1]) || !Array.isArray(lstArgs)) {
         throw new Error(`Expected data array as second argument`)
     }
-    var arg = is_digit(lst[0]) ? '' + lst[0] : lst[0].slice()
+    let arg = is_digit(lst[0]) ? '' + lst[0] : lst[0].slice()
     return ['quote', [arg].concat(lstArgs.slice())]
 }
 
 function logic_op(lst, func) {
     emptyListArgumentException(lst)
-    var res = true
-    for (var i = 0; i < lst.length; i++) {
+    let res = true
+    for (let i = 0; i < lst.length; i++) {
         if (!is_digit(lst[i]) && !isLispBool(lst[i])) {
             throw new Error(`The expected number or bool of arguments does not match the given number`)
         } else if (i > 0) {
@@ -209,8 +228,8 @@ function null_op(inLst) {
 }
 
 function or_op(inLst) {
-    var res = false
-    for (var i = 0; i < inLst.length; i++) {
+    let res = false
+    for (let i = 0; i < inLst.length; i++) {
         if (!isLispBool(inLst[i])) {
             throw new Error(`Expected bool argument`)
         }
@@ -220,23 +239,19 @@ function or_op(inLst) {
 }
 
 function if_op(inLst, inSymbols) {
-    var lst = inLst.slice(1)
+    let lst = inLst.slice(1)
     fixedSizeListArgumentException(lst, 3)
-    var condition = calc(lst[0], inSymbols)
+    let condition = calc(lst[0], inSymbols)
     if (toJSBool(condition)) {
         return calc(lst[1], inSymbols)
     }
-    //console.log('if', inLst, 'sym', inSymbols)
-    console.log('if', inLst, inSymbols)
-    const res = calc(lst[2], inSymbols)
-    //console.log('res', res)
-    return res
+    return calc(lst[2], inSymbols)
 }
 
 function cond_op(inLst, inSymbols) {
-    var lst = inLst.slice(1)
+    let lst = inLst.slice(1)
     condOpArgumentCheck(lst)
-    for (var i = 0; i < lst.length; i++) {
+    for (let i = 0; i < lst.length; i++) {
         if (toJSBool(calc(lst[i][0], inSymbols))) {
             return lst[i][1]
         }
@@ -245,15 +260,13 @@ function cond_op(inLst, inSymbols) {
 }
 
 function let_op(inLst, inSymbols) {
-    console.log('ERRROR!')
-    var lst = inLst.slice(1)
-    var symbols = {}
-    var dupCheck = new Set()
-    Object.assign(symbols, inSymbols)
+    let lst = inLst.slice(1)
+    let symbols = deepClone(inSymbols)
+    let dupCheck = new Set()
     letArgumentCheck(lst)
 
     // Create new symbols
-    for (var i = 0; i < lst[0].length; i++) {
+    for (let i = 0; i < lst[0].length; i++) {
         const newSymbolName = lst[0][i][0]
         if (dupCheck.has(newSymbolName)) {
             throw new Error(`Can not create symbols with the same name`)
@@ -265,20 +278,18 @@ function let_op(inLst, inSymbols) {
     }
 
     // Calculate the rest values
-    var res = 0
-    for (var i = 1; i < lst.length; i++) {
+    let res = 0
+    for (let i = 1; i < lst.length; i++) {
         res = calc(lst[i], symbols)
     }
     return res
 }
 
 function lambda_op(inLambdaExpr, inSymbols) {
-    var symbols = {}
-    Object.assign(symbols, inSymbols)
+    let symbols = deepClone(inSymbols)
     const lambdaExpr = inLambdaExpr.slice()
 
     function calcLambda(lambdaInArgs) {
-        console.log('hey', lambdaExpr, lambdaInArgs, inSymbols)
         lambdaArgumentCheck(lambdaExpr)
         const valueList = lambdaInArgs.slice(1)
         const lambdaArgsName = lambdaExpr[1]
@@ -287,16 +298,14 @@ function lambda_op(inLambdaExpr, inSymbols) {
             throw new Error(`Lambda got least or few arguments`)
         }
 
-        var dupCheck = new Set()
+        let dupCheck = new Set(lambdaArgsName)
+        if (dupCheck.size !== lambdaArgsName.length) {
+            throw new Error(`Can not create symbols with the same name`)
+        }
         
-        for (var i = 0; i < lambdaArgsName.length; i++) {
+        for (let i = 0; i < lambdaArgsName.length; i++) {
             const newSymbolName = lambdaArgsName[i]
-            const newSymbolVal = valueList[i]
-            if (dupCheck.has(newSymbolName)) {
-                throw new Error(`Can not create symbols with the same name`)
-            }
-            dupCheck.add(newSymbolName)
-            symbols[newSymbolName] = newSymbolVal
+            symbols[newSymbolName] = Array.isArray(valueList[i]) ? valueList[i].slice() : valueList[i]
         }
         if (isLambda(lambdaExpr[2])) {
             return func_op['lambda'](lambdaExpr[2], symbols)
@@ -310,7 +319,7 @@ function lambda_op(inLambdaExpr, inSymbols) {
 function define_op(inLst, inSymbols) {
     fixedSizeListArgumentException(inLst, 3)
     const symbol = inLst[1]
-    var value = Array.isArray(inLst[2]) ? inLst[2].slice() : inLst[2]
+    let value = Array.isArray(inLst[2]) ? inLst[2].slice() : inLst[2]
     if (isLambda(value)) {
         value = func_op['lambda'](value, inSymbols)
     }
@@ -366,10 +375,7 @@ function is_data_op(op) {
 }
 
 function is_data(lst) {
-    if (Array.isArray(lst) && is_data_op(lst[0])) {
-        return true;
-    }
-    return false;
+    return Array.isArray(lst) && is_data_op(lst[0]);
 }
 
 function is_symbol(symbol, symbols) {
@@ -401,14 +407,14 @@ function is_posible_symbol(val) {
 }
 
 function make_op(inLst) {
-    var lst = inLst.slice()
+    let lst = inLst.slice()
     const head = lst[0]
     lst.shift()
     return ops[head](lst)
 }
 
 function is_digit(elem) {
-    var i = 0
+    let i = 0
     if (typeof elem == 'number') {
         return true
     }
@@ -428,10 +434,11 @@ function is_digit(elem) {
 }
 
 
-function calc(inLst, inSymbols) {
+function calc(inLst, inSymb) {
     // считает сначал все аргументы
     // потом на посчитанных аргументах просто выполняет операцию
-    
+    const inSymbols = deepClone(inSymb)
+
     if (is_digit(inLst)) {
         return Number(inLst)
     } else if (isLispBool(inLst)) {
@@ -442,9 +449,7 @@ function calc(inLst, inSymbols) {
         return get_symbol(inLst, inSymbols)
     }
 
-    var op = inLst[0]
-    console.log(inSymbols)
-    const isFilter = op === 'filter' || op === 'append'
+    let op = inLst[0]
 
 
     if (op in definition_op) {
@@ -455,8 +460,7 @@ function calc(inLst, inSymbols) {
         return special_op[op](inLst, inSymbols)
     }
 
-    
-    
+
     if (!isLambda(op) && Array.isArray(op)) {
         op = calc(op, inSymbols)
     }
@@ -465,20 +469,19 @@ function calc(inLst, inSymbols) {
     }
 
     if (!is_op(op) && !isParsedLambda(op) && !is_data_op(op)) {
-        console.log(op)
         throw new Error('Expected a procedure that can be applied to arguments')
     }
-    var lst = inLst.slice()
+    let lst = inLst.slice()
 
     if (lst[0] !== op) {
         lst[0] = op;
     }
 
-    for (var i = 1; i < lst.length; i++) {
+    for (let i = 1; i < lst.length; i++) {
         if (is_symbol(lst[i], inSymbols)) {
             lst[i] = get_symbol(lst[i], inSymbols)
         } else if (isLambda(lst[i])) {
-            lst[i] = func_op['lambda'](lst[i], inSymbols) //     ?????????????????????????????
+            lst[i] = func_op['lambda'](lst[i], inSymbols)
         } else if (Array.isArray(lst[i])) {
             lst[i] = calc(lst[i], inSymbols)
         } 
@@ -489,11 +492,7 @@ function calc(inLst, inSymbols) {
     }
 
     if (isParsedLambda(op)) {
-        const ret_val = op(lst)
-        if (isFilter) {
-            //console.log('res', ret_val, 'original',inLst, inSymbols)
-        }
-        return ret_val
+        return op(lst)
     }
 
     return make_op(lst)
@@ -502,8 +501,8 @@ function calc(inLst, inSymbols) {
 function first_level_calc(lst) {
     // считает сначал все аргументы
     // потом на посчитанных аргументах просто выполняет операцию
-    var res = []
-    for (var i = 0; i < lst.length; i++) {
+    let res = []
+    for (let i = 0; i < lst.length; i++) {
         if (Array.isArray(lst[i])) {
             res.push(calc(lst[i], {}))
         } else {
